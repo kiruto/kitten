@@ -1,0 +1,24 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "target": "es5",
+        "outDir": "dist",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "lib": [ "es2015", "es6", "dom" ],
+        "typeRoots": [
+            "./node_modules/@types"
+        ]
+    },
+    "files": [],
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ],
+    "awesomeTypescriptLoaderOptions": {
+        /* ... */
+    }
+}
