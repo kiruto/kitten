@@ -66,13 +66,6 @@ let wheelListener: (ev: WheelEvent) => void = null;
 
 let wheelObservable: Observable<WheelEvent> = null;
 
-export function getWheelObservable() {
-    if (null == wheelObservable) {
-        wheelObservable = getAnyWheelObservable(window);
-    }
-    return wheelObservable;
-}
-
 function getAnyWheelObservable(el: any) {
     return Observable.create((observer: Observer<WheelEvent>) => {
         try {
@@ -88,6 +81,13 @@ function getAnyWheelObservable(el: any) {
     });
 }
 
-export function getDOMWheelObservable(el: Element) {
+export function getWheelObservable(): Observable<WheelEvent> {
+    if (null == wheelObservable) {
+        wheelObservable = getAnyWheelObservable(window);
+    }
+    return wheelObservable;
+}
+
+export function getDOMWheelObservable(el: Element): Observable<WheelEvent> {
     return getAnyWheelObservable(el);
 }

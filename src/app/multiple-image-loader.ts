@@ -1,26 +1,36 @@
 import {Observable, Observer} from "rxjs";
 import {ImageItem} from "./interface/image-item";
+import {attribute, style} from "../libs";
 /**
  * Created by yuriel on 2/22/17.
  */
-export function createImg(id: string, url: string): Observable<HTMLImageElement> {
+export function loadImgWith(dom: HTMLImageElement, url: string): Observable<HTMLImageElement> {
     return Observable.create((observer: Observer<HTMLImageElement>) => {
-        let img = document.createElement("img") as HTMLImageElement;
-        img.setAttribute("id", id);
-        img.setAttribute("src", url);
-        img.setAttribute("width", "0");
-        img.setAttribute("height", "0");
-        img.style.display = "none";
+        dom.setAttribute("src", url);
 
-        img.onload = (ev: Event) => {
-            observer.next(img);
+        dom.onload = (ev: Event) => {
+            observer.next(dom);
             observer.complete();
         };
 
-        img.onabort = (ev: UIEvent) => {
+        dom.onabort = (ev: UIEvent) => {
             observer.error(ev);
         };
-    });
+    })
+}
+
+export function createImg(id: string, url: string): Observable<HTMLImageElement> {
+    let img = document.getElementById(id) as HTMLImageElement;
+    if (null == img) {
+        img = document.createElement("img") as HTMLImageElement;
+        style(img, {display: "none"});
+        attribute(img, {
+            id: id,
+            width: "0",
+            height: "0"
+        });
+    }
+    return loadImgWith(img, url);
 }
 
 export function createImgs(list: Array<ImageItem>): Observable<HTMLImageElement> {

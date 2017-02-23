@@ -17,7 +17,7 @@
 - 支持npm v4 latest
 
 ## 安装
-1. clone本项目
+1. fork或clone本项目
 ```bash
 git clone https://github.com/kiruto/flapper
 ```
