@@ -1,5 +1,5 @@
 import {attachRootView} from "./test-kits";
-import {CanvasElementManager, scale, SCALE_RATIO, move} from "./canvas-element-manager";
+import {CanvasElementManager, scale, SCALE_RATIO, move, CanvasWorkMode} from "./canvas-element-manager";
 import {ImageItem} from "./interface/image-item";
 import {Observable} from "rxjs";
 /**
@@ -51,6 +51,7 @@ describe("Canvas manager", () => {
             }, [] as string[])
             .map(urls => {
                 mgr.loadImageUrls(urls);
+                mgr.changeMode(CanvasWorkMode.MOVE);
                 return urls;
             })
             .subscribe({

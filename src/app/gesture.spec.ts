@@ -1,5 +1,5 @@
 import {move, CanvasElementManager} from "./canvas-element-manager";
-import {getWheelObservable} from "./gesture";
+import {getWheelObservable} from "./gesture-wheel";
 import {loadImgWith} from "./multiple-image-loader";
 import {style} from "../libs";
 import {attachRootView} from "./test-kits";

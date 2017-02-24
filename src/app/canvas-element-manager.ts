@@ -2,15 +2,17 @@ import {style, attribute} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
 import {CanvasImagePosition} from "./interface/canvas-image-position";
 import {Subscription, Observable} from "rxjs";
-import {getWheelObservable} from "./gesture";
+import {getWheelObservable} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {createImgs} from "./multiple-image-loader";
 import {ImageItem} from "./interface/image-item";
+import {getDragObservable} from "./gesture-mouse";
 /**
  * Created by yuriel on 2/22/17.
  */
 
 export const SCALE_RATIO = 1;
+export const MOVE_RATIO = 1;
 export const SCALE_MIN_SIZE = 5;
 
 
@@ -18,19 +20,32 @@ export class CanvasElementManager {
     public readonly canvasId: string;
     public readonly imgId: string;
 
+    /** The origin set of the background image DOM<img> */
     public imgOrigin: ElementOrigin;
+
+    /** The origin set of the canvas DOM */
     public canvasOrigin: ElementOrigin;
 
+    /** The canvas' context. */
     private context: CanvasRenderingContext2D;
+    /** Image's attributes. Such as "position", "origin" , etc. */
     private imageStatus: CanvasImagePosition;
+    /** The image DOM<img> which is viewing now. */
     private currentImageElement: HTMLImageElement;
+    /** An images show list. Can only initialized once. */
     private imageItems: ImageItem[];
+    /** Images download observable. Called each when complete download. */
     private imagesObservable: Observable<HTMLImageElement>;
+    /** Images element collections. */
     private imageElements: HTMLImageElement[] = [];
 
+    /** Work mode. */
     private mode: CanvasWorkMode;
+    /** Called when viewing image changed (like next, prev and etc). */
     private changeImageSubscriber: Subscription;
+    /** Called when captured mouse events. */
     private subscriber: Subscription;
+    /** If the imageItems is initialized */
     private initializedList = false;
 
     constructor(private rootId: string) {
@@ -216,9 +231,10 @@ export class CanvasElementManager {
 
         switch(mode) {
             case CanvasWorkMode.SCALE:
-                this.subscriber = getWheelObservable().subscribe(this.scaleObserver);
+                this.subscriber = getDragObservable().subscribe(this.scaleObserver);
                 break;
             case CanvasWorkMode.MOVE:
+                this.subscriber = getDragObservable().subscribe(this.moveObserver);
                 break;
             case CanvasWorkMode.CONSTRAST:
                 break;
@@ -227,10 +243,10 @@ export class CanvasElementManager {
         }
     }
 
-    private scaleObserver: PartialObserver<WheelEvent> = {
-        next: (ev: WheelEvent) => {
+    private scaleObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => {
             let ratio = this.currentImageElement.naturalHeight / this.currentImageElement.naturalWidth;
-            let increment = SCALE_RATIO * ev.deltaY;
+            let increment = - SCALE_RATIO * ev.movementY;
 
             this.imageStatus.canvasOffsetX -= increment;
             this.imageStatus.canvasOffsetY -= (increment * ratio);
@@ -238,9 +254,20 @@ export class CanvasElementManager {
             this.imageStatus.canvasImageHeight += (2 * increment * ratio);
             this.draw();
         },
-        error: (err: any) => {},
+        error: (err: any) => console.log(err),
         complete: () => {}
     };
+
+    private moveObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => {
+            let incrementX = MOVE_RATIO * ev.movementX;
+            let incrementY = MOVE_RATIO * ev.movementY;
+            this.imageStatus.canvasOffsetX += incrementX;
+            this.imageStatus.canvasOffsetY += incrementY;
+            this.draw();
+        },
+        error: err => console.log(err)
+    }
 }
 
 export enum CanvasWorkMode {
@@ -285,6 +312,7 @@ export function move(dom: HTMLElement, incrementX: number, incrementY: number) {
     dom.style.left = `${parseInt(dom.style.left) - incrementX}px`;
     dom.style.top = `${parseInt(dom.style.top) - incrementY}px`;
 }
+
 
 /** module private functions */
 
