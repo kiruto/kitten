@@ -1,8 +1,19 @@
 import {style, attribute} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
+import {CanvasImagePosition} from "./interface/canvas-image-position";
+import {Subscription, Observable} from "rxjs";
+import {getWheelObservable} from "./gesture";
+import {PartialObserver} from "rxjs/Observer";
+import {createImgs} from "./multiple-image-loader";
+import {ImageItem} from "./interface/image-item";
 /**
  * Created by yuriel on 2/22/17.
  */
+
+export const SCALE_RATIO = 1;
+export const SCALE_MIN_SIZE = 5;
+
+
 export class CanvasElementManager {
     public readonly canvasId: string;
     public readonly imgId: string;
@@ -10,14 +21,43 @@ export class CanvasElementManager {
     public imgOrigin: ElementOrigin;
     public canvasOrigin: ElementOrigin;
 
+    private context: CanvasRenderingContext2D;
+    private imageStatus: CanvasImagePosition;
+    private currentImageElement: HTMLImageElement;
+    private imageItems: ImageItem[];
+    private imagesObservable: Observable<HTMLImageElement>;
+    private imageElements: HTMLImageElement[] = [];
+
+    private mode: CanvasWorkMode;
+    private changeImageSubscriber: Subscription;
+    private subscriber: Subscription;
+    private initializedList = false;
+
     constructor(private rootId: string) {
         this.canvasId = `ivc-${rootId}`;
         this.imgId = `ivi-${rootId}`;
     }
 
+    /** Only for test! */
     initEmptyViews() {
         this.getCanvasView();
         this.getImgView();
+    }
+
+    initViews() {
+
+    }
+
+    /**
+     * This method can only called once.
+     * @param urls
+     */
+    loadImageUrls(urls: string[]) {
+        if (!this.initializedList) {
+            this.setImageList(urls);
+        } else {
+            console.log("loadImageUrls() can only called once!");
+        }
     }
 
     setCanvas(dom: HTMLCanvasElement) {
@@ -54,6 +94,13 @@ export class CanvasElementManager {
         return view as HTMLCanvasElement;
     }
 
+    private getContext() {
+        if (null == this.context) {
+            this.context = this.getCanvasView().getContext("2d");
+        }
+        return this.context;
+    }
+
     getImgView(): HTMLImageElement {
         let view = document.getElementById(this.imgId);
         if (null == view) {
@@ -66,16 +113,148 @@ export class CanvasElementManager {
         return view as HTMLImageElement;
     }
 
-    viewImage(img: HTMLImageElement) {
-        // let context = this.getCanvasView().getContext("2d");
-        // context.drawImage(img, 0, 0);
+    private renderImage(img: HTMLImageElement) {
+        this.currentImageElement = img;
+        this.imageStatus = getPosition(img);
+        this.draw();
     }
+
+    private draw() {
+        let context = this.getContext();
+        context.canvas.width  = window.innerWidth;
+        context.canvas.height = window.innerHeight;
+        drawImage(context, this.currentImageElement, this.imageStatus);
+    }
+
+    /**
+     * The entry method of class.
+     * @param list
+     */
+    private setImageList(list: string[]) {
+        this.imagesObservable = Observable.from(list)
+            .reduce((acc: ImageItem[], one: string, index: number) => {
+                acc.push({
+                    id: `ivi-${this.rootId}-item-${index}`,
+                    url: one
+                } as ImageItem);
+                return acc;
+            }, [] as ImageItem[])
+            .flatMap(list => {
+                this.imageItems = list;
+                if (this.changeImageSubscriber) {
+                    this.changeImageSubscriber.unsubscribe();
+                }
+                return createImgs(list)
+            });
+        this.imagesObservable.subscribe({
+            next: el => {
+                this.imageElements.push(el);
+            },
+            error: err => {
+            },
+            complete: () => {
+                this.changeImageSubscriber = getWheelObservable().subscribe(this.wheelObserver);
+                this.renderImage(this.imageElements[0]);
+            }
+        });
+    }
+
+    private getImageItemByUrl(url: string): ImageItem {
+        return this.imageItems.find((value, index, array) => value.url == url);
+    }
+
+    private getImageElementByUrl(url: string): HTMLImageElement {
+        return this.imageElements.find((el, index, array) => el.src == url);
+    }
+
+    private wheelObserver: PartialObserver<WheelEvent> = {
+        next: ev => {
+            if (ev.deltaY > 0) {
+                this.loadNextImage();
+            } else if (ev.deltaY < 0) {
+                this.loadPrevImage();
+            }
+        },
+        error: err => {
+
+        },
+        complete: () => {}
+    };
+
+    /**
+     * Replace old element with new element and draw.
+     */
+
+    private loadNextImage() {
+        let url = this.currentImageElement.src;
+        let item = this.getImageItemByUrl(url);
+        let index = this.imageItems.indexOf(item);
+        if (index >= this.imageItems.length - 1) {
+            return;
+        }
+        let nextItem = this.imageItems[index + 1];
+        this.currentImageElement = this.getImageElementByUrl(nextItem.url);
+        this.renderImage(this.currentImageElement);
+    }
+
+    private loadPrevImage() {
+        let url = this.currentImageElement.src;
+        let item = this.getImageItemByUrl(url);
+        let index = this.imageItems.indexOf(item);
+        if (index <= 0) {
+            return;
+        }
+        let prevItem = this.imageItems[index - 1];
+        this.currentImageElement = this.getImageElementByUrl(prevItem.url);
+        this.renderImage(this.currentImageElement);
+    }
+
+    changeMode(mode: CanvasWorkMode) {
+        if (null != this.subscriber) {
+            this.subscriber.unsubscribe()
+        }
+
+        switch(mode) {
+            case CanvasWorkMode.SCALE:
+                this.subscriber = getWheelObservable().subscribe(this.scaleObserver);
+                break;
+            case CanvasWorkMode.MOVE:
+                break;
+            case CanvasWorkMode.CONSTRAST:
+                break;
+            default:
+                break;
+        }
+    }
+
+    private scaleObserver: PartialObserver<WheelEvent> = {
+        next: (ev: WheelEvent) => {
+            let ratio = this.currentImageElement.naturalHeight / this.currentImageElement.naturalWidth;
+            let increment = SCALE_RATIO * ev.deltaY;
+
+            this.imageStatus.canvasOffsetX -= increment;
+            this.imageStatus.canvasOffsetY -= (increment * ratio);
+            this.imageStatus.canvasImageWidth += (2 * increment);
+            this.imageStatus.canvasImageHeight += (2 * increment * ratio);
+            this.draw();
+        },
+        error: (err: any) => {},
+        complete: () => {}
+    };
+}
+
+export enum CanvasWorkMode {
+    SCALE, MOVE, CONSTRAST
 }
 
 /** module public functions */
 
-export const SCALE_RATIO = 1;
-export const SCALE_MIN_SIZE = 5;
+/**
+ * Scale an absolute DOM.
+ * @param dom
+ * @param increment
+ * @param origin
+ */
 export function scale(dom: HTMLImageElement, increment: number, origin: ElementOrigin = null) {
     if (dom.width * dom.height == 0) {
         return;
@@ -96,6 +275,12 @@ export function scale(dom: HTMLImageElement, increment: number, origin: ElementO
     }
 }
 
+/**
+ * Move an absolute DOM.
+ * @param dom
+ * @param incrementX
+ * @param incrementY
+ */
 export function move(dom: HTMLElement, incrementX: number, incrementY: number) {
     dom.style.left = `${parseInt(dom.style.left) - incrementX}px`;
     dom.style.top = `${parseInt(dom.style.top) - incrementY}px`;
@@ -113,7 +298,11 @@ function createCanvas(id: string): HTMLCanvasElement {
         "overflow": "hidden",
         "z-index": 2000
     });
-    attribute(view, {id: id});
+    attribute(view, {
+        id: id,
+        width: window.innerWidth,
+        height: window.innerHeight
+    });
     return view;
 }
 
@@ -135,4 +324,17 @@ function origin(dom: HTMLElement): ElementOrigin {
         w: dom.offsetWidth,
         h: dom.offsetHeight
     } as ElementOrigin;
+}
+
+function getPosition(img: HTMLImageElement): CanvasImagePosition {
+    return {
+        canvasOffsetX: 0,
+        canvasOffsetY: 0,
+        canvasImageWidth: img.naturalWidth,
+        canvasImageHeight: img.naturalHeight
+    } as CanvasImagePosition;
+}
+
+function drawImage(context: CanvasRenderingContext2D, img: HTMLImageElement, p: CanvasImagePosition) {
+    context.drawImage(img, p.canvasOffsetX, p.canvasOffsetY, p.canvasImageWidth, p.canvasImageHeight);
 }

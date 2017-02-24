@@ -1,8 +1,7 @@
 import {attachRootView} from "./test-kits";
 import {CanvasElementManager, scale, SCALE_RATIO, move} from "./canvas-element-manager";
-import {getDOMWheelObservable, getWheelObservable} from "./gesture";
-import {style} from "../libs";
-import {loadImgWith} from "./multiple-image-loader";
+import {ImageItem} from "./interface/image-item";
+import {Observable} from "rxjs";
 /**
  * Created by yuriel on 2/22/17.
  */
@@ -30,6 +29,38 @@ describe("Canvas element", () => {
         scale(view, s, mgr.imgOrigin);
         expect(view.width).toBe(oldWidth);
 
-        document.getElementById(rootId).removeChild(view);
+        document.getElementById(rootId).remove();
     });
+
+    afterAll(() => {
+        document.getElementById(rootId).remove();
+    })
+});
+
+describe("Canvas manager", () => {
+    let rootId = "root-canvas-manager";
+    attachRootView(rootId);
+    let mgr = new CanvasElementManager(rootId);
+
+    it("should change image", (done) => {
+        Observable.range(10, 20)
+            .map(idx => `https://dummyimage.com/600x400/0${idx}/fff`)
+            .reduce((acc, one, index) => {
+                acc.push(one);
+                return acc;
+            }, [] as string[])
+            .map(urls => {
+                mgr.loadImageUrls(urls);
+                return urls;
+            })
+            .subscribe({
+                next: urls => {},
+                error: err => done(),
+                complete: () => done()
+            });
+    });
+
+    // afterAll(() => {
+    //     document.getElementById(rootId).remove();
+    // });
 });

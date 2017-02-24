@@ -4,7 +4,9 @@
 var webpackConfig = require('./webpack.config');
 var browsers, customLaunchers;
 
-if (webpackConfig.__debug__) {
+let conf = require('./config/flapper.config.js');
+
+if (conf.debug) {
   browsers = ["Chrome"];
   customLaunchers = null;
 } else {
@@ -23,8 +25,6 @@ if (webpackConfig.__debug__) {
     }
   }
 }
-
-let conf = require('./config/flapper.config.js');
 
 module.exports = function(config) {
   config.set({

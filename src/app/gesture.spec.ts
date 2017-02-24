@@ -31,13 +31,23 @@ describe("Image gesture", () => {
         loadImgWith(view, IMAGE_URL)
             .map(el => {
                 getWheelObservable()
-                    .map(ev => {
-                        // console.log(ev);
-                        // scale(el, ev.deltaY, mgr.imgOrigin);
-                        move(el, ev.deltaX, ev.deltaY);
-                        return ev;
-                    })
-                    .subscribe();
+                    .subscribe({
+                        next: ev => {
+                            /** Log event */
+                            // console.log(ev);
+
+                            /** scale dom */
+                            // scale(el, ev.deltaY, mgr.imgOrigin);
+
+                            /** move dom */
+                            // move(el, ev.deltaX, ev.deltaY);
+                            return ev;
+                        },
+                        error: err => {
+                            console.log(err);
+                        },
+                        complete: () => {}
+                    });
                 return el;
             })
             .subscribe({
@@ -49,5 +59,9 @@ describe("Image gesture", () => {
                     done();
                 }
             });
+    });
+
+    afterAll(() => {
+        document.getElementById(rootId).remove();
     });
 });

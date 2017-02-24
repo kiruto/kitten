@@ -11,7 +11,6 @@ describe("The image loader", () => {
 
         createImg(ID, IMAGE_URL).subscribe({
             next: el => {
-                console.log(el);
                 expect(el).not.toBeNull();
                 document.body.appendChild(el);
                 expect(document.getElementById(ID).getAttribute("src")).toEqual(IMAGE_URL);
@@ -32,13 +31,14 @@ describe("The image loader", () => {
             .reduce((acc, one, index) => {
                 acc.push({id: `img-${index}`, url: one} as ImageItem);
                 return acc;
-            }, new Array<ImageItem>())
+            }, [] as ImageItem[])
             .subscribe(list => {
                 createImgs(list).subscribe({
                     next: el => {
-                        console.log(el);
                         expect(el).not.toBeNull();
                         document.body.appendChild(el);
+                        expect(document.getElementById(el.id)).toBe(el);
+                        el.remove();
                     },
                     error: err => {
                         console.log(err);
