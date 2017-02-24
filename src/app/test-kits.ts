@@ -17,3 +17,18 @@ export function attachRootView(id: string) {
     }
     return element;
 }
+
+export function attachActionTo(id: string, name: string, cb: (ev: MouseEvent) => void) {
+    let element = document.getElementById(id);
+    let action = document.createElement("a");
+    action.onclick = cb;
+    action.innerHTML = name;
+    action.id = `${id}-action-${name}`;
+    element.appendChild(action);
+    style(action, {
+        padding: "10px",
+        display: "block",
+        color: "red"
+    });
+    return action;
+}

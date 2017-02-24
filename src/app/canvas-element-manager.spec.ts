@@ -1,4 +1,4 @@
-import {attachRootView} from "./test-kits";
+import {attachRootView, attachActionTo} from "./test-kits";
 import {CanvasElementManager, scale, SCALE_RATIO, move, CanvasWorkMode} from "./canvas-element-manager";
 import {ImageItem} from "./interface/image-item";
 import {Observable} from "rxjs";
@@ -51,7 +51,7 @@ describe("Canvas manager", () => {
             }, [] as string[])
             .map(urls => {
                 mgr.loadImageUrls(urls);
-                mgr.changeMode(CanvasWorkMode.MOVE);
+                mgr.changeMode(CanvasWorkMode.SCALE);
                 return urls;
             })
             .subscribe({
@@ -59,6 +59,18 @@ describe("Canvas manager", () => {
                 error: err => done(),
                 complete: () => done()
             });
+
+        attachActionTo(rootId, "done", ev => {
+            done();
+        });
+
+        attachActionTo(rootId, "move", ev => {
+            mgr.changeMode(CanvasWorkMode.MOVE);
+        });
+
+        attachActionTo(rootId, "scale", ev => {
+            mgr.changeMode(CanvasWorkMode.SCALE);
+        });
     });
 
     // afterAll(() => {
