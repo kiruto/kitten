@@ -7,6 +7,7 @@ import {PartialObserver} from "rxjs/Observer";
 import {createImgs} from "./multiple-image-loader";
 import {ImageItem} from "./interface/image-item";
 import {getDragObservable} from "./gesture-mouse";
+import {getTouchObservable} from "./gesture-mobile";
 /**
  * Created by yuriel on 2/22/17.
  *
@@ -15,6 +16,7 @@ import {getDragObservable} from "./gesture-mouse";
 
 export const SCALE_RATIO = 0.01;
 export const MOVE_RATIO = 1;
+export const MOVE_TOUCH_RATIO = 1;
 export const BRIGHTNESS_RATIO = 1;
 export const CONTRAST_RATIO = 1;
 export const SCALE_MIN_SIZE = 5;
@@ -58,7 +60,10 @@ export class CanvasElementManager {
     private changeImageSubscriber: Subscription;
 
     /** Called when captured mouse events. */
-    private subscriber: Subscription;
+    private drugSubscriber: Subscription;
+
+    /** Called on mobile */
+    private touchSubscriber: Subscription;
 
     /** If the imageItems is initialized */
     private initializedList = false;
@@ -261,75 +266,108 @@ export class CanvasElementManager {
     }
 
     changeMode(mode: CanvasWorkMode) {
-        if (null != this.subscriber) {
-            this.subscriber.unsubscribe()
+        if (null != this.drugSubscriber) {
+            this.drugSubscriber.unsubscribe();
+        }
+
+        if(null != this.touchSubscriber) {
+            this.touchSubscriber.unsubscribe();
         }
         this.mode = mode;
 
         switch(mode) {
             case CanvasWorkMode.SCALE:
-                this.subscriber = getDragObservable().subscribe(this.scaleObserver);
+                this.drugSubscriber = getDragObservable().subscribe(this.scaleObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.scaleTouchObserver);
                 break;
             case CanvasWorkMode.MOVE:
-                this.subscriber = getDragObservable().subscribe(this.moveObserver);
+                this.drugSubscriber = getDragObservable().subscribe(this.moveObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.moveTouchObserver);
                 break;
             case CanvasWorkMode.BRIGHTNESS_CONTRAST:
-                this.subscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
+                this.drugSubscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.brightnessConstrastTouchObserver);
                 break;
             default:
                 break;
         }
     }
 
-    private scaleObserver: PartialObserver<MouseEvent> = {
-        next: (ev: MouseEvent) => {
-            let increment = ev.movementY;
-            this.imageStatus.scale += increment;
-            if (this.imageStatus.scale <= - 1 / SCALE_RATIO) {
-                this.imageStatus.scale = 1 - (1 / SCALE_RATIO);
-            } else {
-                this.imageStatus.canvasOffsetX -= (this.currentImageElement.naturalWidth * increment * SCALE_RATIO) / 2;
-                this.imageStatus.canvasOffsetY -= (this.currentImageElement.naturalHeight * increment * SCALE_RATIO) / 2;
-            }
+    private scale(increment: number) {
+        this.imageStatus.scale += increment;
+        if (this.imageStatus.scale <= - 1 / SCALE_RATIO) {
+            this.imageStatus.scale = 1 - (1 / SCALE_RATIO);
+        } else {
+            this.imageStatus.canvasOffsetX -= (this.currentImageElement.naturalWidth * increment * SCALE_RATIO) / 2;
+            this.imageStatus.canvasOffsetY -= (this.currentImageElement.naturalHeight * increment * SCALE_RATIO) / 2;
+        }
 
-            this.draw();
-        },
+        this.draw();
+    }
+
+    private scaleObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => this.scale(ev.movementY),
         error: (err: any) => console.log(err)
     };
+
+    private scaleTouchObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => this.scale(ev.offsets[0].y),
+        error: (err) => console.log(err)
+    };
+
+    private move(incrementX: number, incrementY: number) {
+        this.imageStatus.canvasOffsetX += incrementX;
+        this.imageStatus.canvasOffsetY += incrementY;
+        this.draw();
+    }
 
     private moveObserver: PartialObserver<MouseEvent> = {
         next: (ev: MouseEvent) => {
             let incrementX = MOVE_RATIO * ev.movementX;
             let incrementY = MOVE_RATIO * ev.movementY;
-            this.imageStatus.canvasOffsetX += incrementX;
-            this.imageStatus.canvasOffsetY += incrementY;
-            this.draw();
+            this.move(incrementX, incrementY);
         },
         error: err => console.log(err)
     };
 
-    private brightnessContrastObserver: PartialObserver<MouseEvent> = {
-        next: (ev: MouseEvent) => {
-            this.imageStatus.brightness += (ev.movementX * BRIGHTNESS_RATIO);
-
-            if (this.imageStatus.brightness > 255) {
-                this.imageStatus.brightness = 255;
-            } else if (this.imageStatus.brightness < 0) {
-                this.imageStatus.brightness = 0;
-            }
-
-            this.imageStatus.contrast += (ev.movementY * CONTRAST_RATIO);
-
-            if (this.imageStatus.contrast > 255) {
-                this.imageStatus.contrast = 255;
-            } else if (this.imageStatus.contrast < -255){
-                this.imageStatus.contrast = -255;
-            }
-
-            this.draw();
+    private moveTouchObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => {
+            let incrementX = - MOVE_TOUCH_RATIO * ev.offsets[0].x;
+            let incrementY = - MOVE_TOUCH_RATIO * ev.offsets[0].y;
+            this.move(incrementX,incrementY);
         },
+        error: err => console.log(err)
+    };
+
+    private brightnessContrast(incrementX: number, incrementY: number) {
+        this.imageStatus.brightness += (incrementX * BRIGHTNESS_RATIO);
+
+        if (this.imageStatus.brightness > 255) {
+            this.imageStatus.brightness = 255;
+        } else if (this.imageStatus.brightness < 0) {
+            this.imageStatus.brightness = 0;
+        }
+
+        this.imageStatus.contrast += (incrementY * CONTRAST_RATIO);
+
+        if (this.imageStatus.contrast > 255) {
+            this.imageStatus.contrast = 255;
+        } else if (this.imageStatus.contrast < -255){
+            this.imageStatus.contrast = -255;
+        }
+
+        this.draw();
+    }
+
+    private brightnessContrastObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => this.brightnessContrast(ev.movementX, ev.movementY),
         error: (err: any) => console.log(err)
     };
+
+    private brightnessConstrastTouchObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => this.brightnessContrast(- ev.offsets[0].x, - ev.offsets[0].y),
+        error: (err: any) => console.log(err)
+    }
 }
 
 export enum CanvasWorkMode {
