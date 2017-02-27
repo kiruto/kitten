@@ -31,6 +31,7 @@ module.exports = function(config) {
     frameworks: ["jasmine", "karma-typescript", 'mocha', 'chai', 'sinon'],
     files: [
       { pattern: "src/**/*.spec.ts", watched: conf.debug },
+      { pattern: "assets-test/images/**/*", watched: false, included: false, served: true, nocache: false }
     ],
     preprocessors: {
       "src/**/*.spec.ts": ["webpack"],

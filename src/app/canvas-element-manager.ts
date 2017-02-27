@@ -1,4 +1,4 @@
-import {style, attribute} from "../libs";
+import {style, attribute, range} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
 import {CanvasImagePosition} from "./interface/canvas-image-position";
 import {Subscription, Observable} from "rxjs";
@@ -9,10 +9,14 @@ import {ImageItem} from "./interface/image-item";
 import {getDragObservable} from "./gesture-mouse";
 /**
  * Created by yuriel on 2/22/17.
+ *
+ * Core module.
  */
 
 export const SCALE_RATIO = 1;
 export const MOVE_RATIO = 1;
+export const BRIGHTNESS_RATIO = 1;
+export const CONTRAST_RATIO = 1;
 export const SCALE_MIN_SIZE = 5;
 
 
@@ -28,23 +32,34 @@ export class CanvasElementManager {
 
     /** The canvas' context. */
     private context: CanvasRenderingContext2D;
+
     /** Image's attributes. Such as "position", "origin" , etc. */
     private imageStatus: CanvasImagePosition;
+
     /** The image DOM<img> which is viewing now. */
     private currentImageElement: HTMLImageElement;
+
     /** An images show list. Can only initialized once. */
     private imageItems: ImageItem[];
+
     /** Images download observable. Called each when complete download. */
     private imagesObservable: Observable<HTMLImageElement>;
+
     /** Images element collections. */
     private imageElements: HTMLImageElement[] = [];
 
+    /** Attributes of all children DOM. */
+    private commonAttr: any;
+
     /** Work mode. */
     private mode: CanvasWorkMode;
+
     /** Called when viewing image changed (like next, prev and etc). */
     private changeImageSubscriber: Subscription;
+
     /** Called when captured mouse events. */
     private subscriber: Subscription;
+
     /** If the imageItems is initialized */
     private initializedList = false;
 
@@ -59,8 +74,14 @@ export class CanvasElementManager {
         this.getImgView();
     }
 
-    initViews() {
-
+    /**
+     * Set attributes of all children DOM.
+     * This method should be called on initialized BEFORE load images.
+     */
+    attr(attr: any) {
+        this.commonAttr = attr;
+        attribute(this.getCanvasView(), attr);
+        attribute(this.getImgView(), attr);
     }
 
     /**
@@ -163,6 +184,9 @@ export class CanvasElementManager {
             });
         this.imagesObservable.subscribe({
             next: el => {
+                if (this.commonAttr) {
+                    attribute(el, this.commonAttr);
+                }
                 this.imageElements.push(el);
             },
             error: err => {
@@ -175,11 +199,15 @@ export class CanvasElementManager {
     }
 
     private getImageItemByUrl(url: string): ImageItem {
-        return this.imageItems.find((value, index, array) => value.url == url);
+        return this.imageItems.find((value, index, array) => {
+            return value.url.includes(url) || url.includes(value.url)
+        });
     }
 
     private getImageElementByUrl(url: string): HTMLImageElement {
-        return this.imageElements.find((el, index, array) => el.src == url);
+        return this.imageElements.find((el, index, array) => {
+            return el.src.includes(url) || url.includes(el.src);
+        });
     }
 
     private wheelObserver: PartialObserver<WheelEvent> = {
@@ -228,6 +256,7 @@ export class CanvasElementManager {
         if (null != this.subscriber) {
             this.subscriber.unsubscribe()
         }
+        this.mode = mode;
 
         switch(mode) {
             case CanvasWorkMode.SCALE:
@@ -236,7 +265,8 @@ export class CanvasElementManager {
             case CanvasWorkMode.MOVE:
                 this.subscriber = getDragObservable().subscribe(this.moveObserver);
                 break;
-            case CanvasWorkMode.CONSTRAST:
+            case CanvasWorkMode.BRIGHTNESS_CONTRAST:
+                this.subscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
                 break;
             default:
                 break;
@@ -254,8 +284,7 @@ export class CanvasElementManager {
             this.imageStatus.canvasImageHeight += (2 * increment * ratio);
             this.draw();
         },
-        error: (err: any) => console.log(err),
-        complete: () => {}
+        error: (err: any) => console.log(err)
     };
 
     private moveObserver: PartialObserver<MouseEvent> = {
@@ -267,11 +296,34 @@ export class CanvasElementManager {
             this.draw();
         },
         error: err => console.log(err)
-    }
+    };
+
+    private brightnessContrastObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => {
+            this.imageStatus.brightness += (ev.movementX * BRIGHTNESS_RATIO);
+
+            if (this.imageStatus.brightness > 255) {
+                this.imageStatus.brightness = 255;
+            } else if (this.imageStatus.brightness < 0) {
+                this.imageStatus.brightness = 0;
+            }
+
+            this.imageStatus.contrast += (ev.movementY * CONTRAST_RATIO);
+
+            if (this.imageStatus.contrast > 255) {
+                this.imageStatus.contrast = 255;
+            } else if (this.imageStatus.contrast < -255){
+                this.imageStatus.contrast = -255;
+            }
+
+            this.draw();
+        },
+        error: (err: any) => console.log(err)
+    };
 }
 
 export enum CanvasWorkMode {
-    SCALE, MOVE, CONSTRAST
+    SCALE, MOVE, BRIGHTNESS_CONTRAST
 }
 
 /** module public functions */
@@ -359,10 +411,26 @@ function getPosition(img: HTMLImageElement): CanvasImagePosition {
         canvasOffsetX: 0,
         canvasOffsetY: 0,
         canvasImageWidth: img.naturalWidth,
-        canvasImageHeight: img.naturalHeight
+        canvasImageHeight: img.naturalHeight,
+        brightness: 0,
+        contrast: 0
     } as CanvasImagePosition;
 }
 
 function drawImage(context: CanvasRenderingContext2D, img: HTMLImageElement, p: CanvasImagePosition) {
     context.drawImage(img, p.canvasOffsetX, p.canvasOffsetY, p.canvasImageWidth, p.canvasImageHeight);
+
+    let image = context.getImageData(p.canvasOffsetX, p.canvasOffsetY, p.canvasImageWidth, p.canvasImageHeight);
+    let contrast = 1 + (p.contrast / 255);
+
+    for (let idx = 0; idx < image.data.length; idx += 4) {
+        image.data[idx] += p.brightness;
+        image.data[idx + 1] += p.brightness;
+        image.data[idx + 2] += p.brightness;
+
+        image.data[idx] = ((((image.data[idx] / 255) - 0.5) * contrast) + 0.5) * 255;
+        image.data[idx + 1] = ((((image.data[idx + 1] / 255) - 0.5) * contrast) + 0.5) * 255;
+        image.data[idx + 2] = ((((image.data[idx + 2] / 255) - 0.5) * contrast) + 0.5) * 255;
+    }
+    context.putImageData(image, p.canvasOffsetX, p.canvasOffsetY);
 }

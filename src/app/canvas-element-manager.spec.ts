@@ -43,8 +43,9 @@ describe("Canvas manager", () => {
     let mgr = new CanvasElementManager(rootId);
 
     it("should change image", (done) => {
-        Observable.range(10, 20)
-            .map(idx => `https://dummyimage.com/600x400/0${idx}/fff`)
+        Observable.of('008', '010', '030', '050', '440', '800')
+            // .map(idx => `https://dummyimage.com/600x400/0${idx}/fff`)
+            .map(idx => `base/assets-test/images/${idx}.png`)
             .reduce((acc, one, index) => {
                 acc.push(one);
                 return acc;
@@ -61,7 +62,7 @@ describe("Canvas manager", () => {
             });
 
         attachActionTo(rootId, "done", ev => {
-            done();
+            document.getElementById(rootId).remove();
         });
 
         attachActionTo(rootId, "move", ev => {
@@ -70,6 +71,10 @@ describe("Canvas manager", () => {
 
         attachActionTo(rootId, "scale", ev => {
             mgr.changeMode(CanvasWorkMode.SCALE);
+        });
+
+        attachActionTo(rootId, "brightness and contrast", ev => {
+            mgr.changeMode(CanvasWorkMode.BRIGHTNESS_CONTRAST);
         });
     });
 

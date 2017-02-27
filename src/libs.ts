@@ -1,7 +1,7 @@
 /**
  * Created by yuriel on 2/22/17.
  */
-export function range (start: number, end: number) {
+export function range(start: number, end: number) {
     return Array.from({length: (end - start)}, (v, k) => k + start);
 }
 
