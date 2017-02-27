@@ -76,6 +76,10 @@ describe("Canvas manager", () => {
         attachActionTo(rootId, "brightness and contrast", ev => {
             mgr.changeMode(CanvasWorkMode.BRIGHTNESS_CONTRAST);
         });
+
+        attachActionTo(rootId, "reset", ev => {
+            mgr.reset();
+        });
     });
 
     // afterAll(() => {

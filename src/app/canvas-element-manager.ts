@@ -1,4 +1,4 @@
-import {style, attribute, range} from "../libs";
+import {style, attribute} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
 import {CanvasImagePosition} from "./interface/canvas-image-position";
 import {Subscription, Observable} from "rxjs";
@@ -13,7 +13,7 @@ import {getDragObservable} from "./gesture-mouse";
  * Core module.
  */
 
-export const SCALE_RATIO = 1;
+export const SCALE_RATIO = 0.01;
 export const MOVE_RATIO = 1;
 export const BRIGHTNESS_RATIO = 1;
 export const CONTRAST_RATIO = 1;
@@ -151,7 +151,9 @@ export class CanvasElementManager {
 
     private renderImage(img: HTMLImageElement) {
         this.currentImageElement = img;
-        this.imageStatus = getPosition(img);
+        if (!this.imageStatus) {
+            this.imageStatus = resetPosition(img);
+        }
         this.draw();
     }
 
@@ -252,6 +254,12 @@ export class CanvasElementManager {
         this.renderImage(this.currentImageElement);
     }
 
+    /** Reset all the changes */
+    reset() {
+        this.imageStatus = resetPosition(this.currentImageElement);
+        this.draw();
+    }
+
     changeMode(mode: CanvasWorkMode) {
         if (null != this.subscriber) {
             this.subscriber.unsubscribe()
@@ -275,13 +283,15 @@ export class CanvasElementManager {
 
     private scaleObserver: PartialObserver<MouseEvent> = {
         next: (ev: MouseEvent) => {
-            let ratio = this.currentImageElement.naturalHeight / this.currentImageElement.naturalWidth;
-            let increment = - SCALE_RATIO * ev.movementY;
+            let increment = ev.movementY;
+            this.imageStatus.scale += increment;
+            if (this.imageStatus.scale <= - 1 / SCALE_RATIO) {
+                this.imageStatus.scale = 1 - (1 / SCALE_RATIO);
+            } else {
+                this.imageStatus.canvasOffsetX -= (this.currentImageElement.naturalWidth * increment * SCALE_RATIO) / 2;
+                this.imageStatus.canvasOffsetY -= (this.currentImageElement.naturalHeight * increment * SCALE_RATIO) / 2;
+            }
 
-            this.imageStatus.canvasOffsetX -= increment;
-            this.imageStatus.canvasOffsetY -= (increment * ratio);
-            this.imageStatus.canvasImageWidth += (2 * increment);
-            this.imageStatus.canvasImageHeight += (2 * increment * ratio);
             this.draw();
         },
         error: (err: any) => console.log(err)
@@ -406,21 +416,26 @@ function origin(dom: HTMLElement): ElementOrigin {
     } as ElementOrigin;
 }
 
-function getPosition(img: HTMLImageElement): CanvasImagePosition {
+function resetPosition(img: HTMLImageElement): CanvasImagePosition {
     return {
         canvasOffsetX: 0,
         canvasOffsetY: 0,
-        canvasImageWidth: img.naturalWidth,
-        canvasImageHeight: img.naturalHeight,
+        scale: 0,
         brightness: 0,
         contrast: 0
     } as CanvasImagePosition;
 }
 
 function drawImage(context: CanvasRenderingContext2D, img: HTMLImageElement, p: CanvasImagePosition) {
-    context.drawImage(img, p.canvasOffsetX, p.canvasOffsetY, p.canvasImageWidth, p.canvasImageHeight);
+    let scale = 1 + p.scale * SCALE_RATIO;
+    let width = img.naturalWidth * scale;
+    let height = img.naturalHeight * scale;
+    let x = p.canvasOffsetX;
+    let y = p.canvasOffsetY;
 
-    let image = context.getImageData(p.canvasOffsetX, p.canvasOffsetY, p.canvasImageWidth, p.canvasImageHeight);
+    context.drawImage(img, x, y, width, height);
+
+    let image = context.getImageData(x, y, width, height);
     let contrast = 1 + (p.contrast / 255);
 
     for (let idx = 0; idx < image.data.length; idx += 4) {

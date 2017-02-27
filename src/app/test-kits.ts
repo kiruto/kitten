@@ -20,15 +20,32 @@ export function attachRootView(id: string) {
 
 export function attachActionTo(id: string, name: string, cb: (ev: MouseEvent) => void) {
     let element = document.getElementById(id);
-    let action = document.createElement("a");
+    expect(element).not.toBeNull();
+    let actionBarId = `${id}-action-bar`;
+    let actionBar = document.getElementById(actionBarId);
+    if (!actionBar) {
+        actionBar = document.createElement("div");
+        element.appendChild(actionBar);
+        attribute(actionBar, {
+            id: actionBarId
+        });
+        style(actionBar, {
+            bottom: "0",
+            position: "fixed",
+            "z-index": "100000"
+        });
+    }
+    let action = document.createElement("button");
     action.onclick = cb;
     action.innerHTML = name;
     action.id = `${id}-action-${name}`;
-    element.appendChild(action);
+    actionBar.appendChild(action);
     style(action, {
         padding: "10px",
+        margin: "10px",
         display: "block",
-        color: "red"
+        color: "red",
+        float: "left"
     });
     return action;
 }

@@ -4,8 +4,7 @@
 export interface CanvasImagePosition {
     canvasOffsetX?: number;
     canvasOffsetY?: number;
-    canvasImageWidth?: number;
-    canvasImageHeight?: number;
+    scale: number;
     brightness: number;
     contrast: number;
 }
