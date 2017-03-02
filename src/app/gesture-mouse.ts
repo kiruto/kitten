@@ -1,7 +1,9 @@
-import {Observable, Observer} from "rxjs";
+import {Observable, Observer, ReplaySubject} from "rxjs";
 /**
  * Created by yuriel on 2/24/17.
  */
+
+let globalSubject: ReplaySubject<MouseEvent>;
 
 function getAnyDragObservable(el: any): Observable<MouseEvent> {
     let flag = 0;
@@ -21,7 +23,11 @@ function getAnyDragObservable(el: any): Observable<MouseEvent> {
 }
 
 export function getDragObservable(): Observable<MouseEvent> {
-    return getAnyDragObservable(window);
+    if (null == globalSubject) {
+        globalSubject = new ReplaySubject();
+        getAnyDragObservable(window).subscribe(globalSubject);
+    }
+    return globalSubject;
 }
 
 export function getDOMODragObservable(dom: HTMLElement): Observable<MouseEvent> {

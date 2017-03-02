@@ -1,7 +1,9 @@
-import {Observable, Observer} from "rxjs";
+import {Observable, Observer, ReplaySubject} from "rxjs";
 /**
  * Created by yuriel on 2/27/17.
  */
+
+let globalSubject: ReplaySubject<OffsetTouchEvent>;
 
 function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
     let start: Offset[];
@@ -46,7 +48,11 @@ function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
 }
 
 export function getTouchObservable(): Observable<OffsetTouchEvent> {
-    return getAnyTouchObservable(window);
+    if (null == globalSubject) {
+        globalSubject = new ReplaySubject<OffsetTouchEvent>();
+        getAnyTouchObservable(window).subscribe(globalSubject);
+    }
+    return globalSubject;
 }
 
 export function getDOMTouchObservable(dom: HTMLElement): Observable<OffsetTouchEvent> {

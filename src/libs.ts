@@ -18,3 +18,12 @@ export function attribute(receiverDOM: HTMLElement, attr: any) {
         receiverDOM.setAttribute(key, value);
     })
 }
+
+/** export a global attribute on window object. */
+export function define(name: string, obj: any) {
+    if (!(<any>window)[name]) {
+        (<any>window)[name] = obj;
+    } else {
+        throw `${name} is already defined.`;
+    }
+}

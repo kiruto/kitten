@@ -1,10 +1,13 @@
-import {attachRootView, attachActionTo} from "./test-kits";
-import {CanvasElementManager, scale, SCALE_RATIO, move, CanvasWorkMode} from "./canvas-element-manager";
-import {ImageItem} from "./interface/image-item";
+import {attachRootView, attachActionTo} from "./test-kits.spec";
+import {CanvasElementManager, scale, move} from "./canvas-element-manager";
 import {Observable} from "rxjs";
+import {CanvasWorkMode} from "./interface/canvas-work-mode";
+import {define} from "../libs";
 /**
  * Created by yuriel on 2/22/17.
  */
+define("CanvasElementManager", CanvasElementManager);
+
 describe("Canvas element", () => {
     let rootId = "root-view";
     attachRootView(rootId);
@@ -42,23 +45,26 @@ describe("Canvas manager", () => {
     attachRootView(rootId);
     let mgr = new CanvasElementManager(rootId);
 
-    it("should change image", (done) => {
+    it("should load images", (done) => {
         Observable.of('008', '010', '030', '050', '440', '800')
-            // .map(idx => `https://dummyimage.com/600x400/0${idx}/fff`)
             .map(idx => `base/assets-test/images/${idx}.png`)
             .reduce((acc, one, index) => {
                 acc.push(one);
                 return acc;
             }, [] as string[])
-            .map(urls => {
+            .flatMap(urls => {
                 mgr.loadImageUrls(urls);
                 mgr.changeMode(CanvasWorkMode.SCALE);
-                return urls;
+                return mgr.imageDownloadObservable;
             })
             .subscribe({
-                next: urls => {},
+                next: el => {},
                 error: err => done(),
-                complete: () => done()
+                complete: () => {
+                    mgr.destroy();
+                    document.getElementById(rootId).remove();
+                    done();
+                }
             });
 
         attachActionTo(rootId, "done", ev => {
@@ -81,8 +87,4 @@ describe("Canvas manager", () => {
             mgr.reset();
         });
     });
-
-    // afterAll(() => {
-    //     document.getElementById(rootId).remove();
-    // });
 });

@@ -1,4 +1,4 @@
-import {Observable, Observer} from "rxjs";
+import {Observable, Observer, ReplaySubject} from "rxjs";
 /**
  * Created by yuriel on 2/22/17.
  */
@@ -64,7 +64,7 @@ function addWheelListener(elem: any, callback: (ev: WheelEvent) => void, useCapt
 
 let wheelListener: (ev: WheelEvent) => void = null;
 
-let wheelObservable: Observable<WheelEvent> = null;
+let globalSubject: ReplaySubject<WheelEvent>;
 
 function getAnyWheelObservable(el: any) {
     return Observable.create((observer: Observer<WheelEvent>) => {
@@ -82,10 +82,11 @@ function getAnyWheelObservable(el: any) {
 }
 
 export function getWheelObservable(): Observable<WheelEvent> {
-    if (null == wheelObservable) {
-        wheelObservable = getAnyWheelObservable(window);
+    if (null == globalSubject) {
+        globalSubject = new ReplaySubject();
+        getAnyWheelObservable(window).subscribe(globalSubject);
     }
-    return wheelObservable;
+    return globalSubject;
 }
 
 export function getDOMWheelObservable(el: Element): Observable<WheelEvent> {

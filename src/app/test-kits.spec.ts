@@ -2,6 +2,13 @@ import {style, attribute} from "../libs";
 /**
  * Created by yuriel on 2/22/17.
  */
+
+describe("Test kits", () => {
+    it("only for tests.", (done) => {
+        done();
+    });
+});
+
 export function attachRootView(id: string) {
     let element = document.getElementById(id);
     if (null == element) {

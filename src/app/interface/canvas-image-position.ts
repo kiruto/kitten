@@ -8,3 +8,13 @@ export interface CanvasImagePosition {
     brightness: number;
     contrast: number;
 }
+
+export function getPosition(): CanvasImagePosition {
+    return {
+        canvasOffsetX: 0,
+        canvasOffsetY: 0,
+        scale: 0,
+        brightness: 0,
+        contrast: 0
+    } as CanvasImagePosition;
+}

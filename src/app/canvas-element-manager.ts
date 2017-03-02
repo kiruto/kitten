@@ -1,30 +1,35 @@
 import {style, attribute} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
-import {CanvasImagePosition} from "./interface/canvas-image-position";
-import {Subscription, Observable} from "rxjs";
+import {CanvasImagePosition, getPosition} from "./interface/canvas-image-position";
+import {Subscription, Observable, ReplaySubject} from "rxjs";
 import {getWheelObservable} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {createImgs} from "./multiple-image-loader";
 import {ImageItem} from "./interface/image-item";
 import {getDragObservable} from "./gesture-mouse";
 import {getTouchObservable} from "./gesture-mobile";
+import {ElementManager} from "./interface/element-manager";
+import {CanvasWorkMode} from "./interface/canvas-work-mode";
+import {CONFIGURATION} from "./configuration";
 /**
  * Created by yuriel on 2/22/17.
  *
  * Core module.
  */
 
-export const SCALE_RATIO = 0.01;
-export const MOVE_RATIO = 1;
-export const MOVE_TOUCH_RATIO = 1;
-export const BRIGHTNESS_RATIO = 1;
-export const CONTRAST_RATIO = 1;
-export const SCALE_MIN_SIZE = 5;
+const SCALE_RATIO = CONFIGURATION.canvas.scale;
+const MOVE_RATIO = CONFIGURATION.canvas.move;
+const MOVE_TOUCH_RATIO = CONFIGURATION.canvas.touchMove;
+const BRIGHTNESS_RATIO = CONFIGURATION.canvas.brightness;
+const CONTRAST_RATIO = CONFIGURATION.canvas.contrast;
+const SCALE_MIN_SIZE = CONFIGURATION.canvas.scaleMinSize;
 
-
-export class CanvasElementManager {
+export class CanvasElementManager implements ElementManager {
     public readonly canvasId: string;
     public readonly imgId: string;
+
+    /** Images download observable. Called each when complete download. */
+    public readonly imageDownloadObservable= new ReplaySubject<HTMLImageElement>();
 
     /** The origin set of the background image DOM<img> */
     public imgOrigin: ElementOrigin;
@@ -43,9 +48,6 @@ export class CanvasElementManager {
 
     /** An images show list. Can only initialized once. */
     private imageItems: ImageItem[];
-
-    /** Images download observable. Called each when complete download. */
-    private imagesObservable: Observable<HTMLImageElement>;
 
     /** Images element collections. */
     private imageElements: HTMLImageElement[] = [];
@@ -95,6 +97,7 @@ export class CanvasElementManager {
      */
     loadImageUrls(urls: string[]) {
         if (!this.initializedList) {
+            this.initializedList = true;
             this.setImageList(urls);
         } else {
             console.log("loadImageUrls() can only called once!");
@@ -157,7 +160,7 @@ export class CanvasElementManager {
     private renderImage(img: HTMLImageElement) {
         this.currentImageElement = img;
         if (!this.imageStatus) {
-            this.imageStatus = resetPosition(img);
+            this.imageStatus = getPosition();
         }
         this.draw();
     }
@@ -174,7 +177,7 @@ export class CanvasElementManager {
      * @param list
      */
     private setImageList(list: string[]) {
-        this.imagesObservable = Observable.from(list)
+        Observable.from(list)
             .reduce((acc: ImageItem[], one: string, index: number) => {
                 acc.push({
                     id: `ivi-${this.rootId}-item-${index}`,
@@ -188,8 +191,10 @@ export class CanvasElementManager {
                     this.changeImageSubscriber.unsubscribe();
                 }
                 return createImgs(list)
-            });
-        this.imagesObservable.subscribe({
+            })
+            .subscribe(this.imageDownloadObservable);
+
+        this.imageDownloadObservable.subscribe({
             next: el => {
                 if (this.commonAttr) {
                     attribute(el, this.commonAttr);
@@ -261,8 +266,22 @@ export class CanvasElementManager {
 
     /** Reset all the changes */
     reset() {
-        this.imageStatus = resetPosition(this.currentImageElement);
+        this.imageStatus = getPosition();
         this.draw();
+    }
+
+    /** Unregistered all callbacks. */
+    destroy() {
+        this.touchSubscriber = null;
+        this.drugSubscriber = null;
+        this.changeImageSubscriber = null;
+
+        if (this.changeImageSubscriber)
+            this.changeImageSubscriber.unsubscribe();
+        if (this.drugSubscriber)
+            this.drugSubscriber.unsubscribe();
+        if (this.touchSubscriber)
+            this.touchSubscriber.unsubscribe();
     }
 
     changeMode(mode: CanvasWorkMode) {
@@ -370,10 +389,6 @@ export class CanvasElementManager {
     }
 }
 
-export enum CanvasWorkMode {
-    SCALE, MOVE, BRIGHTNESS_CONTRAST
-}
-
 /** module public functions */
 
 /**
@@ -452,16 +467,6 @@ function origin(dom: HTMLElement): ElementOrigin {
         w: dom.offsetWidth,
         h: dom.offsetHeight
     } as ElementOrigin;
-}
-
-function resetPosition(img: HTMLImageElement): CanvasImagePosition {
-    return {
-        canvasOffsetX: 0,
-        canvasOffsetY: 0,
-        scale: 0,
-        brightness: 0,
-        contrast: 0
-    } as CanvasImagePosition;
 }
 
 function drawImage(context: CanvasRenderingContext2D, img: HTMLImageElement, p: CanvasImagePosition) {

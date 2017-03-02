@@ -26,7 +26,6 @@ let env = require(`./config/environment${prefix}`);
 
 plugins = plugins.concat([
   new CheckerPlugin(),
-  // new TsConfigPathsPlugin(),
   new webpack.DefinePlugin({
     __IN_DEBUG__: JSON.stringify(conf.debug),
     __VERSION__: JSON.stringify(`${conf.version}.${Date.now()}`),

@@ -36,7 +36,6 @@ export function createImg(id: string, url: string): Observable<HTMLImageElement>
     let img = document.getElementById(id) as HTMLImageElement;
     if (null == img) {
         img = document.createElement("img") as HTMLImageElement;
-        // style(img, {display: "none"});
         attribute(img, {
             id: id
         });
