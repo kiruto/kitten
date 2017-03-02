@@ -82,8 +82,8 @@ function getAnyWheelObservable(el: any) {
 }
 
 export function getWheelObservable(): Observable<WheelEvent> {
-    if (null == globalSubject) {
-        globalSubject = new ReplaySubject();
+    if (!globalSubject) {
+        globalSubject = new ReplaySubject(0);
         getAnyWheelObservable(window).subscribe(globalSubject);
     }
     return globalSubject;

@@ -48,9 +48,9 @@ function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
 }
 
 export function getTouchObservable(): Observable<OffsetTouchEvent> {
-    if (null == globalSubject) {
-        globalSubject = new ReplaySubject<OffsetTouchEvent>();
-        getAnyTouchObservable(window).subscribe(globalSubject);
+    if(!globalSubject) {
+        globalSubject = new ReplaySubject(0);
+        getAnyTouchObservable(window).subscribe(globalSubject)
     }
     return globalSubject;
 }

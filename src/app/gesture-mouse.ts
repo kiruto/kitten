@@ -9,10 +9,12 @@ function getAnyDragObservable(el: any): Observable<MouseEvent> {
     let flag = 0;
     return Observable.create((observer: Observer<MouseEvent>) => {
         el.addEventListener("mousedown", (ev: MouseEvent) => {
-            flag = 1;
+            if (ev.which === 1) {
+                flag = 1;
+            }
         }, false);
         el.addEventListener("mousemove", (ev: MouseEvent) => {
-            if (flag === 1) {
+            if (flag === 1 && ev.which === 1) {
                 observer.next(ev);
             }
         }, false);
@@ -23,8 +25,8 @@ function getAnyDragObservable(el: any): Observable<MouseEvent> {
 }
 
 export function getDragObservable(): Observable<MouseEvent> {
-    if (null == globalSubject) {
-        globalSubject = new ReplaySubject();
+    if (!globalSubject) {
+        globalSubject = new ReplaySubject(0);
         getAnyDragObservable(window).subscribe(globalSubject);
     }
     return globalSubject;

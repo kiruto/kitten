@@ -4,28 +4,21 @@ import {ImageItem} from "./interface/image-item";
 import {createImgs} from "./multiple-image-loader";
 import {getWheelObservable} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
-import {CanvasImagePosition, getPosition} from "./interface/canvas-image-position";
-import {ManagerConfigures} from "./interface/magager-configures";
+import {ImageStatus, newImagePosition} from "./interface/canvas-image-position";
+import {CONFIGURATION} from "./configuration";
+import {CanvasWorkMode} from "./interface/canvas-work-mode";
+import {getTouchObservable} from "./gesture-mobile";
+import {getDragObservable} from "./gesture-mouse";
 /**
  * Created by yuriel on 2/28/17.
  */
 
-const SCALE_RATIO = 0.01;
-const MOVE_RATIO = 1;
-const MOVE_TOUCH_RATIO = 1;
-const BRIGHTNESS_RATIO = 1;
-const CONTRAST_RATIO = 1;
-const SCALE_MIN_SIZE = 5;
-
-export let CSSGestureConf = {
-    scale: SCALE_RATIO,
-    move: MOVE_RATIO,
-    touchScale: SCALE_RATIO,
-    touchMove: MOVE_TOUCH_RATIO,
-    brightness: BRIGHTNESS_RATIO,
-    contrast: CONTRAST_RATIO,
-    scaleMinSize: SCALE_MIN_SIZE
-} as ManagerConfigures;
+const SCALE_RATIO = CONFIGURATION.css.scale;
+const MOVE_RATIO = CONFIGURATION.css.move;
+const MOVE_TOUCH_RATIO = CONFIGURATION.css.touchMove;
+const BRIGHTNESS_RATIO = CONFIGURATION.css.brightness;
+const CONTRAST_RATIO = CONFIGURATION.css.contrast;
+const SCALE_MIN_SIZE = CONFIGURATION.css.scaleMinSize;
 
 export class CSSElementManager {
     readonly wrapperId: string;
@@ -34,8 +27,8 @@ export class CSSElementManager {
 
     private imageItems: ImageItem[];
 
-    /** Image's attributes. Such as "position", "origin" , etc. */
-    private imageStatus: CanvasImagePosition;
+    /** Image's status attributes. Such as "position", "origin" , etc. */
+    private imageStatus: ImageStatus;
 
     /** The image DOM<img> which is viewing now. */
     private currentImageElement: HTMLImageElement;
@@ -47,6 +40,15 @@ export class CSSElementManager {
 
     /** Called when viewing image changed (like next, prev and etc). */
     private changeImageSubscriber: Subscription;
+
+    /** Called when captured mouse events. */
+    private drugSubscriber: Subscription;
+
+    /** Called on mobile */
+    private touchSubscriber: Subscription;
+
+    /** Work mode. */
+    private mode: CanvasWorkMode;
 
     constructor(private rootId: string) {
         this.wrapperId = `ivd-${rootId}`;
@@ -64,7 +66,7 @@ export class CSSElementManager {
 
     /** Reset all the changes */
     reset() {
-        this.imageStatus = getPosition();
+        this.imageStatus = newImagePosition();
         this.draw();
     }
 
@@ -90,6 +92,85 @@ export class CSSElementManager {
         }
         return view;
     }
+
+    changeMode(mode: CanvasWorkMode) {
+        if (this.drugSubscriber) {
+            this.drugSubscriber.unsubscribe();
+        }
+
+        if(this.touchSubscriber) {
+            this.touchSubscriber.unsubscribe();
+        }
+        this.mode = mode;
+
+        switch(mode) {
+            case CanvasWorkMode.SCALE:
+                this.drugSubscriber = getDragObservable().subscribe(this.scaleObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.scaleTouchObserver);
+                break;
+            case CanvasWorkMode.MOVE:
+                this.drugSubscriber = getDragObservable().subscribe(this.moveObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.moveTouchObserver);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private scale(increment: number) {
+        let scale = this.imageStatus.scale;
+        this.imageStatus.scale += increment;
+        if (this.imageStatus.scale * SCALE_RATIO > 1) {
+            this.imageStatus.scale = scale;
+        }
+        this.draw();
+    }
+
+    private scaleObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => this.scale(ev.movementY),
+        error: (err: any) => console.log(err)
+    };
+
+    private scaleTouchObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => this.scale(- ev.offsets[0].y),
+        error: (err) => console.log(err)
+    };
+
+    private move(incrementX: number, incrementY: number) {
+        this.imageStatus.offsetX += incrementX;
+        this.imageStatus.offsetY += incrementY;
+        if (this.imageStatus.offsetX * MOVE_RATIO >= 99) {
+            this.imageStatus.offsetX = 99 / MOVE_RATIO;
+        } else if (this.imageStatus.offsetX * MOVE_RATIO <= -99) {
+            this.imageStatus.offsetX = -99 / MOVE_RATIO;
+        }
+
+        if (this.imageStatus.offsetY * MOVE_RATIO >= 99) {
+            this.imageStatus.offsetY = 99 / MOVE_RATIO;
+        } else if (this.imageStatus.offsetY * MOVE_RATIO <= -99) {
+            this.imageStatus.offsetY = -99 / MOVE_RATIO;
+        }
+
+        this.draw();
+    }
+
+    private moveObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => {
+            let incrementX = MOVE_RATIO * ev.movementX;
+            let incrementY = MOVE_RATIO * ev.movementY;
+            this.move(incrementX, incrementY);
+        },
+        error: err => console.log(err)
+    };
+
+    private moveTouchObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => {
+            let incrementX = - MOVE_TOUCH_RATIO * ev.offsets[0].x;
+            let incrementY = - MOVE_TOUCH_RATIO * ev.offsets[0].y;
+            this.move(incrementX,incrementY);
+        },
+        error: err => console.log(err)
+    };
 
     private imageElements(): NodeListOf<HTMLImageElement> {
         return this.getWrapperView().getElementsByTagName("img");
@@ -121,6 +202,12 @@ export class CSSElementManager {
 
         this.imageDownloadObservable.subscribe({
             next: el => {
+                attribute(el, { ondragstart: "return false", ondrop: "return false" });
+                style(el, {
+                    transition: "transform 100ms ease",
+                    position: "absolute",
+                    "user-select": "none"
+                });
                 if (this.commonAttr) {
                     attribute(el, this.commonAttr);
                     attribute(el, {
@@ -174,6 +261,10 @@ export class CSSElementManager {
     }
 
     private displayImage(el: HTMLImageElement) {
+        if (!this.imageStatus) {
+            this.imageStatus = newImagePosition();
+        }
+
         if (this.currentImageElement != el) {
             this.currentImageElement = el;
             Array.prototype.forEach.call(this.imageElements(), (img: HTMLImageElement) => {
@@ -200,7 +291,12 @@ export class CSSElementManager {
     }
 
     private draw() {
-
+        let scale = 1 - this.imageStatus.scale * SCALE_RATIO;
+        style(this.currentImageElement, {
+            transform: `scale(${scale})`,
+            top: `${this.imageStatus.offsetY * MOVE_RATIO}%`,
+            left: `${this.imageStatus.offsetX * MOVE_RATIO}%`,
+        });
     }
 }
 
@@ -216,15 +312,4 @@ function createWrapper(id: string): HTMLDivElement {
         height: "100%",
     });
     return wrapper;
-}
-
-function createImg(id: string): HTMLImageElement {
-    let img = document.createElement("img");
-    attribute(img, {
-        id: id,
-    });
-    style(img, {
-
-    });
-    return img;
 }

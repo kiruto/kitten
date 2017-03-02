@@ -1,20 +1,20 @@
 /**
  * Created by yuriel on 2/24/17.
  */
-export interface CanvasImagePosition {
-    canvasOffsetX?: number;
-    canvasOffsetY?: number;
+export interface ImageStatus {
+    offsetX?: number;
+    offsetY?: number;
     scale: number;
     brightness: number;
     contrast: number;
 }
 
-export function getPosition(): CanvasImagePosition {
+export function newImagePosition(): ImageStatus {
     return {
-        canvasOffsetX: 0,
-        canvasOffsetY: 0,
+        offsetX: 0,
+        offsetY: 0,
         scale: 0,
         brightness: 0,
         contrast: 0
-    } as CanvasImagePosition;
+    } as ImageStatus;
 }

@@ -1,7 +1,8 @@
-import {attachRootView} from "./test-kits.spec";
+import {attachRootView, attachActionTo} from "./test-kits.spec";
 import {CSSElementManager} from "./css-element-manager";
 import {Observable} from "rxjs";
 import {define} from "../libs";
+import {CanvasWorkMode} from "./interface/canvas-work-mode";
 /**
  * Created by yuriel on 2/28/17.
  */
@@ -38,6 +39,26 @@ describe("CSS element manager", () => {
                     done();
                 }
             });
+
+        attachActionTo(rootId, "done", ev => {
+            document.getElementById(rootId).remove();
+        });
+
+        attachActionTo(rootId, "move", ev => {
+            mgr.changeMode(CanvasWorkMode.MOVE);
+        });
+
+        attachActionTo(rootId, "scale", ev => {
+            mgr.changeMode(CanvasWorkMode.SCALE);
+        });
+
+        attachActionTo(rootId, "brightness and contrast", ev => {
+            mgr.changeMode(CanvasWorkMode.BRIGHTNESS_CONTRAST);
+        });
+
+        attachActionTo(rootId, "reset", ev => {
+            mgr.reset();
+        });
     });
 
     afterAll(() => {
