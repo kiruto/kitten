@@ -62,28 +62,162 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 
 ### 配置
 通过```window.kitten.ivConfig```变量控制. 
-- scale
-- move
-- touchScale
-- touchMove
-- brightness
-- contrast
-- scaleMinSize
+* canvas
+    ```window.kitten.CanvasElementManager```的参数设置. 
+    - scale
+    - move
+    - touchScale
+    - touchMove
+    - brightness
+    - contrast
+    - scaleMinSize
+    
+* css
+    ```window.kitten.CSSElementManager```的参数设置. 
+    - scale
+    - move
+    - touchScale
+        范围为(0.0, 1.0)内的number, 数值越大速度越快.
+    - touchMove
+        范围为(0.0, 1.0)内的number, 数值越大速度越快.
+    - brightness
+    - contrast
+    - scaleMinSize
 
 ### ElementManager
 
 实现类为```window.kitten.CanvasElementManager```及```window.kitten.CSSElementManager```.
 
-- 构造函数
+- constructor(rootId)
+    构造器. 接受一个string型的id作为参数. 参数为需要展示图片的父<div>的id, 父<div>的```innerHTML```最好为空.
+    
+    HTML:
+    
+    ```html
+    <div id="desktop" />
+    ```
+    
+    JavaScript:
+    
+    ```javascript
+    var mgr = new kitten.CanvasElementManager("desktop");
+    ```
+    
 - conf
-- attr
-- loadImageUrls
-- changeMode
-- reset
-- destroy
+
+    当前设置. 设置内容为只读, 禁止修改其内容.
+    
+- attr(attribute)
+
+    设置由kitten生成的子DOM的HTML属性.
+    
+    当设置了如下参数时:
+    
+    ```javascript
+    mgr.attr({ class: "kitten", demo: "true" });
+    ```
+    
+    实际的HTML会展现如下:
+    
+    ```html
+    <div id="desktop" ... >
+      <img class="kitten" demo="true" ... />
+    </div>
+    ```
+    
+- loadImageUrls(urls)
+    
+    读取图片列表.
+    
+    ```javascript
+    mgr.loadImageUrls(["http://exyui.com/kitten_example_1.jpg", "http://exyui.com/kitten_example_2.jpg", /* etc...*/]);
+    ```
+
+- changeMode(mode)
+
+    改变动作模式.
+    
+    ```javascript
+    mgr.changeMode(kitten.mode.SCALE);
+    ```
+    
+    * SCALE
+        缩放. '鼠标Y轴位移'或'手指拖动手机屏幕焦点Y轴'控制图片大小;
+        
+    * MOVE
+        移动. 鼠标拖拽，或手指拖拽手机屏幕控制图片位置;
+    
+    * BRIGHTNESS_CONTRAST
+        亮度和对比度. '鼠标X轴'或'手指拖动手机屏幕焦点X轴'控制亮度, Y轴控制对比度.
+    
+- reset()
+
+    复位. 浏览原始图片.
+    
+- destroy()
+
+    回收.
+
 - observable
+
+    kitten通过rxjs的observable实现函数的回调
+    
     * imageDownloadObservable
+    
+        当图片下载完毕时会生产一个事件.
+        
+        ```javascript
+        mgr.imageDownloadObservable.subscribe({
+          next: function(element) {
+            // 当某张图片下载完毕, 会打印一个加载该图片的DOM
+            console.log(element);
+          },
+          error: function(message) {
+            // 当加载图片出现错误时, 会打印错误原因
+            console.log(message);
+          },
+          complete: function() {
+            // 当全部图片加载完成时, 会弹出弹窗
+            alert('All images have been downloaded successful!');
+          }
+        });
+        ```
+    
     * toFrameObservable
+
+        当图片刷新时, 每一帧都会生产一个事件.
+        
+        ```javascript
+        mgr.toFrameObservable.subscribe({
+          next: function(status) {
+            // 当用户操作时, 会打印当前图片状态
+            console.log(status);
+          },
+          error: function(message) {
+            // 当显示图片出现错误时, 会打印错误原因
+            console.log(message);
+          }
+        });
+        ```
+        
+        图片状态结构:
+        ```
+        status {
+            // 图片位置坐标
+            offsetX?: number;
+            offsetY?: number;
+            
+            // 缩放
+            scale: number;
+            
+            // 亮度
+            brightness: number;
+            
+            // 对比度
+            contrast: number;
+        }
+        ```
+
 
 ## FAQ
 - 我是否需要用TypeScript?
