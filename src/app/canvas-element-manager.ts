@@ -36,7 +36,7 @@ export class CanvasElementManager implements ElementManager {
     public readonly imgId: string;
 
     /** Images download observable. Called each when complete download. */
-    public readonly imageDownloadObservable= new ReplaySubject<HTMLImageElement>();
+    public readonly imageDownloadObservable = new ReplaySubject<HTMLImageElement>();
 
     /** The origin set of the background image DOM<img> */
     public imgOrigin: ElementOrigin;
