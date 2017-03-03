@@ -11,16 +11,25 @@ import {getTouchObservable} from "./gesture-mobile";
 import {getDragObservable} from "./gesture-mouse";
 /**
  * Created by yuriel on 2/28/17.
+ *
+ * Core module.
  */
 
-const SCALE_RATIO = CONFIGURATION.css.scale;
-const MOVE_RATIO = CONFIGURATION.css.move;
-const MOVE_TOUCH_RATIO = CONFIGURATION.css.touchMove;
-const BRIGHTNESS_RATIO = CONFIGURATION.css.brightness;
-const CONTRAST_RATIO = CONFIGURATION.css.contrast;
-const SCALE_MIN_SIZE = CONFIGURATION.css.scaleMinSize;
-
 export class CSSElementManager {
+
+    /**
+     * These values must configured in CONFIGURATION before use, or default values will be used.
+     * Should not be changed at runtime, use it as a const (readonly) variable!
+     */
+    public readonly conf = {
+        SCALE_RATIO: CONFIGURATION.css.scale,
+        MOVE_RATIO: CONFIGURATION.css.move,
+        MOVE_TOUCH_RATIO: CONFIGURATION.css.touchMove,
+        BRIGHTNESS_RATIO: CONFIGURATION.css.brightness,
+        CONTRAST_RATIO: CONFIGURATION.css.contrast,
+        SCALE_MIN_SIZE: CONFIGURATION.css.scaleMinSize
+    };
+
     readonly wrapperId: string;
     readonly imgId: string;
     readonly imageDownloadObservable = new ReplaySubject<HTMLImageElement>();
@@ -105,10 +114,6 @@ export class CSSElementManager {
             this.touchSubscriber.unsubscribe();
         }
 
-        if(!this.zoomSubscriber) {
-            this.zoomSubscriber = getTouchObservable().subscribe(this.scaleTouchZoomObserver);
-        }
-
         this.mode = mode;
 
         switch(mode) {
@@ -128,7 +133,7 @@ export class CSSElementManager {
     private scale(increment: number) {
         let scale = this.imageStatus.scale;
         this.imageStatus.scale += increment;
-        if (this.imageStatus.scale * SCALE_RATIO > 1) {
+        if (this.imageStatus.scale * this.conf.SCALE_RATIO > 1) {
             this.imageStatus.scale = scale;
         }
         this.draw();
@@ -160,16 +165,16 @@ export class CSSElementManager {
     private move(incrementX: number, incrementY: number) {
         this.imageStatus.offsetX += incrementX;
         this.imageStatus.offsetY += incrementY;
-        if (this.imageStatus.offsetX * MOVE_RATIO >= 99) {
-            this.imageStatus.offsetX = 99 / MOVE_RATIO;
-        } else if (this.imageStatus.offsetX * MOVE_RATIO <= -99) {
-            this.imageStatus.offsetX = -99 / MOVE_RATIO;
+        if (this.imageStatus.offsetX * this.conf.MOVE_RATIO >= 99) {
+            this.imageStatus.offsetX = 99 / this.conf.MOVE_RATIO;
+        } else if (this.imageStatus.offsetX * this.conf.MOVE_RATIO <= -99) {
+            this.imageStatus.offsetX = -99 / this.conf.MOVE_RATIO;
         }
 
-        if (this.imageStatus.offsetY * MOVE_RATIO >= 99) {
-            this.imageStatus.offsetY = 99 / MOVE_RATIO;
-        } else if (this.imageStatus.offsetY * MOVE_RATIO <= -99) {
-            this.imageStatus.offsetY = -99 / MOVE_RATIO;
+        if (this.imageStatus.offsetY * this.conf.MOVE_RATIO >= 99) {
+            this.imageStatus.offsetY = 99 / this.conf.MOVE_RATIO;
+        } else if (this.imageStatus.offsetY * this.conf.MOVE_RATIO <= -99) {
+            this.imageStatus.offsetY = -99 / this.conf.MOVE_RATIO;
         }
 
         this.draw();
@@ -177,8 +182,8 @@ export class CSSElementManager {
 
     private moveObserver: PartialObserver<MouseEvent> = {
         next: (ev: MouseEvent) => {
-            let incrementX = MOVE_RATIO * ev.movementX;
-            let incrementY = MOVE_RATIO * ev.movementY;
+            let incrementX = this.conf.MOVE_RATIO * ev.movementX;
+            let incrementY = this.conf.MOVE_RATIO * ev.movementY;
             this.move(incrementX, incrementY);
         },
         error: err => console.log(err)
@@ -186,8 +191,8 @@ export class CSSElementManager {
 
     private moveTouchObserver: PartialObserver<OffsetTouchEvent> = {
         next: (ev: OffsetTouchEvent) => {
-            let incrementX = - MOVE_TOUCH_RATIO * ev.offsets[0].x;
-            let incrementY = - MOVE_TOUCH_RATIO * ev.offsets[0].y;
+            let incrementX = - this.conf.MOVE_TOUCH_RATIO * ev.offsets[0].x;
+            let incrementY = - this.conf.MOVE_TOUCH_RATIO * ev.offsets[0].y;
             this.move(incrementX,incrementY);
         },
         error: err => console.log(err)
@@ -240,6 +245,7 @@ export class CSSElementManager {
             error: err => console.log(err),
             complete: () => {
                 this.changeImageSubscriber = getWheelObservable().subscribe(this.wheelObserver);
+                this.zoomSubscriber = getTouchObservable().subscribe(this.scaleTouchZoomObserver);
                 this.displayImage(this.imageElements()[0]);
             }
         });
@@ -312,11 +318,11 @@ export class CSSElementManager {
     }
 
     private draw() {
-        let scale = 1 - this.imageStatus.scale * SCALE_RATIO;
+        let scale = 1 - this.imageStatus.scale * this.conf.SCALE_RATIO;
         style(this.currentImageElement, {
             transform: `scale(${scale})`,
-            top: `${this.imageStatus.offsetY * MOVE_RATIO}%`,
-            left: `${this.imageStatus.offsetX * MOVE_RATIO}%`,
+            top: `${this.imageStatus.offsetY * this.conf.MOVE_RATIO}%`,
+            left: `${this.imageStatus.offsetX * this.conf.MOVE_RATIO}%`,
         });
     }
 }

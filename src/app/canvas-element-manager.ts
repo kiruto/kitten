@@ -17,14 +17,21 @@ import {CONFIGURATION} from "./configuration";
  * Core module.
  */
 
-const SCALE_RATIO = CONFIGURATION.canvas.scale;
-const MOVE_RATIO = CONFIGURATION.canvas.move;
-const MOVE_TOUCH_RATIO = CONFIGURATION.canvas.touchMove;
-const BRIGHTNESS_RATIO = CONFIGURATION.canvas.brightness;
-const CONTRAST_RATIO = CONFIGURATION.canvas.contrast;
-const SCALE_MIN_SIZE = CONFIGURATION.canvas.scaleMinSize;
-
 export class CanvasElementManager implements ElementManager {
+
+    /**
+     * These values must configured in CONFIGURATION before use, or default values will be used.
+     * Should not be changed at runtime, use it as a const (readonly) variable!
+     */
+    public readonly conf = {
+        SCALE_RATIO: CONFIGURATION.canvas.scale,
+        MOVE_RATIO: CONFIGURATION.canvas.move,
+        MOVE_TOUCH_RATIO: CONFIGURATION.canvas.touchMove,
+        BRIGHTNESS_RATIO: CONFIGURATION.canvas.brightness,
+        CONTRAST_RATIO: CONFIGURATION.canvas.contrast,
+        SCALE_MIN_SIZE: CONFIGURATION.canvas.scaleMinSize
+    };
+
     public readonly canvasId: string;
     public readonly imgId: string;
 
@@ -175,7 +182,7 @@ export class CanvasElementManager implements ElementManager {
         let context = this.getContext();
         context.canvas.width  = window.innerWidth;
         context.canvas.height = window.innerHeight;
-        let scale = 1 + this.imageStatus.scale * SCALE_RATIO;
+        let scale = 1 + this.imageStatus.scale * this.conf.SCALE_RATIO;
         let width = this.currentImageElement.naturalWidth * scale;
         let height = this.currentImageElement.naturalHeight * scale;
         let x = this.imageStatus.offsetX;
@@ -345,11 +352,11 @@ export class CanvasElementManager implements ElementManager {
 
     private scale(increment: number) {
         this.imageStatus.scale += increment;
-        if (this.imageStatus.scale <= - 1 / SCALE_RATIO) {
-            this.imageStatus.scale = 1 - (1 / SCALE_RATIO);
+        if (this.imageStatus.scale <= - 1 / this.conf.SCALE_RATIO) {
+            this.imageStatus.scale = 1 - (1 / this.conf.SCALE_RATIO);
         } else {
-            this.imageStatus.offsetX -= (this.currentImageElement.naturalWidth * increment * SCALE_RATIO) / 2;
-            this.imageStatus.offsetY -= (this.currentImageElement.naturalHeight * increment * SCALE_RATIO) / 2;
+            this.imageStatus.offsetX -= (this.currentImageElement.naturalWidth * increment * this.conf.SCALE_RATIO) / 2;
+            this.imageStatus.offsetY -= (this.currentImageElement.naturalHeight * increment * this.conf.SCALE_RATIO) / 2;
         }
 
         this.draw();
@@ -373,8 +380,8 @@ export class CanvasElementManager implements ElementManager {
 
     private moveObserver: PartialObserver<MouseEvent> = {
         next: (ev: MouseEvent) => {
-            let incrementX = MOVE_RATIO * ev.movementX;
-            let incrementY = MOVE_RATIO * ev.movementY;
+            let incrementX = this.conf.MOVE_RATIO * ev.movementX;
+            let incrementY = this.conf.MOVE_RATIO * ev.movementY;
             this.move(incrementX, incrementY);
         },
         error: err => console.log(err)
@@ -382,15 +389,15 @@ export class CanvasElementManager implements ElementManager {
 
     private moveTouchObserver: PartialObserver<OffsetTouchEvent> = {
         next: (ev: OffsetTouchEvent) => {
-            let incrementX = - MOVE_TOUCH_RATIO * ev.offsets[0].x;
-            let incrementY = - MOVE_TOUCH_RATIO * ev.offsets[0].y;
+            let incrementX = - this.conf.MOVE_TOUCH_RATIO * ev.offsets[0].x;
+            let incrementY = - this.conf.MOVE_TOUCH_RATIO * ev.offsets[0].y;
             this.move(incrementX,incrementY);
         },
         error: err => console.log(err)
     };
 
     private brightnessContrast(incrementX: number, incrementY: number) {
-        this.imageStatus.brightness += (incrementX * BRIGHTNESS_RATIO);
+        this.imageStatus.brightness += (incrementX * this.conf.BRIGHTNESS_RATIO);
 
         if (this.imageStatus.brightness > 255) {
             this.imageStatus.brightness = 255;
@@ -398,7 +405,7 @@ export class CanvasElementManager implements ElementManager {
             this.imageStatus.brightness = 0;
         }
 
-        this.imageStatus.contrast += (incrementY * CONTRAST_RATIO);
+        this.imageStatus.contrast += (incrementY * this.conf.CONTRAST_RATIO);
 
         if (this.imageStatus.contrast > 255) {
             this.imageStatus.contrast = 255;
@@ -440,9 +447,9 @@ export function scale(dom: HTMLImageElement, increment: number, origin: ElementO
         widthOrigin = dom.width;
         heightOrigin = dom.height;
     }
-    let width = dom.width + increment * SCALE_RATIO * 0.01 * widthOrigin;
-    let height = dom.height + increment * SCALE_RATIO * 0.01 * heightOrigin;
-    if (width > SCALE_MIN_SIZE && height > SCALE_MIN_SIZE) {
+    let width = dom.width + increment * this.conf.SCALE_RATIO * 0.01 * widthOrigin;
+    let height = dom.height + increment * this.conf.SCALE_RATIO * 0.01 * heightOrigin;
+    if (width > this.conf.SCALE_MIN_SIZE && height > this.conf.SCALE_MIN_SIZE) {
         dom.width = width;
         dom.height = height;
     }
