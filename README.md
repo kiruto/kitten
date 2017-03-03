@@ -49,9 +49,10 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 ## 单元测试
 1. 在./src目录下的所有**/*.spec.ts文件都被用来测试. 
 2. 执行以下命令进行测试
-```bash
-npm test
-```
+    
+    ```bash
+    npm test
+    ```
 
 ## API
 
@@ -67,7 +68,7 @@ npm test
 
 ### ElementManager
 
-实现类为CanvasElementManager及CSSElementManager.
+实现类为```window.kitten.CanvasElementManager```及```window.kitten.CSSElementManager```.
 
 - 构造函数
 - attr
