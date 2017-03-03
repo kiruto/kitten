@@ -23,7 +23,8 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     
 3. 编译项目
 
-    - 修改编译环境[./config/flapper.config.js](./config/flapper.config.js). 
+    - 修改编译环境[./config/flapper.config.js](./config/flapper.config.js).
+        
         ```javascript
         module.exports = {
             // 是否是测试环境
@@ -32,10 +33,13 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
             version: '1.0.0'
         };
         ```
+        
     - 编译
+        
         ```bash
         npm run build
         ```
+        
         如果是生产环境, 将会使用[./config/environment.prop.js](./config/environment.prop.js)作为环境变量, 并编译成uglify js文件. 
         编译结果在".dist"目录中. 
 
