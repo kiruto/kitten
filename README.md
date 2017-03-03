@@ -76,7 +76,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     
 * css
 
-    ```window.kitten.CSSElementManager```的参数设置.
+    ```window.kitten.CSSElementManager``` 的参数设置.
     
     - scale
     - move
