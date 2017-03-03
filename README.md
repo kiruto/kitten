@@ -93,7 +93,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 实现类为```window.kitten.CanvasElementManager```及```window.kitten.CSSElementManager```.
 
 - constructor(rootId)
-    构造器. 接受一个string型的id作为参数. 参数为需要展示图片的父<div>的id, 父<div>的```innerHTML```最好为空.
+    构造器. 接受一个string型的id作为参数. 参数为需要展示图片的父div的id, 父div的```innerHTML```最好为空.
     
     HTML:
     
