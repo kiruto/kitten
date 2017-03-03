@@ -22,7 +22,6 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     ```
     
 3. 编译项目
-
     - 修改编译环境[./config/flapper.config.js](./config/flapper.config.js).
         
         ```javascript
@@ -76,6 +75,26 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 - changeMode
 - reset
 - destroy
+
+## FAQ
+- 我是否需要用TypeScript
+    kitten使用TypeScript实现, 将工程编译为js文件. 不规定是否使用TypeScript. 使用kitten可以用任何支持原生js的语言.
+    
+- 如何开启canvas模式CORS
+    kitten处理来自不同host的图片时需要服务器和js同时设置支持CORS. kitten应用中在img标签使用 crossorigin 属性，结合合适的 CORS 响应头, 就可以实现在画布中使用跨域 <img> 元素的图像.
+    需要开启, 请在ElementManager对象中使用attr函数加入该属性:
+    
+    ```javascript
+    var mgr = new kitten.CanvasElementManager("root-id");
+    mgr.attr({
+        crossorigin: "anonymous"
+    });
+    ```
+    
+    服务器同样需要开启CORS支持, 具体请参阅文档: [启用了 CORS 的图片](https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_enabled_image)
+    
+    有关crossorigin属性设置: [CORS settings attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes)
+
 
 ## 环境变量
 可以直接修改环境变量文件
