@@ -77,10 +77,12 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 - destroy
 
 ## FAQ
-- 我是否需要用TypeScript
+- 我是否需要用TypeScript?
+
     kitten使用TypeScript实现, 将工程编译为js文件. 不规定是否使用TypeScript. 使用kitten可以用任何支持原生js的语言.
     
-- 如何开启canvas模式CORS
+- 如何开启canvas模式CORS?
+
     kitten处理来自不同host的图片时需要服务器和js同时设置支持CORS. kitten应用中在img标签使用 crossorigin 属性，结合合适的 CORS 响应头, 就可以实现在画布中使用跨域 <img> 元素的图像.
     需要开启, 请在ElementManager对象中使用attr函数加入该属性:
     
