@@ -3,6 +3,7 @@
  */
 interface OffsetTouchEvent extends TouchEvent {
     offsets: Offset[];
+    zoom: number;
 }
 
 interface Offset {

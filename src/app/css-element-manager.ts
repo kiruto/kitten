@@ -44,8 +44,11 @@ export class CSSElementManager {
     /** Called when captured mouse events. */
     private drugSubscriber: Subscription;
 
-    /** Called on mobile */
+    /** Called on mobile. */
     private touchSubscriber: Subscription;
+
+    /** Called on mobile when two point touches zoom. */
+    private zoomSubscriber: Subscription;
 
     /** Work mode. */
     private mode: CanvasWorkMode;
@@ -101,6 +104,11 @@ export class CSSElementManager {
         if(this.touchSubscriber) {
             this.touchSubscriber.unsubscribe();
         }
+
+        if(!this.zoomSubscriber) {
+            this.zoomSubscriber = getTouchObservable().subscribe(this.scaleTouchZoomObserver);
+        }
+
         this.mode = mode;
 
         switch(mode) {
@@ -132,7 +140,20 @@ export class CSSElementManager {
     };
 
     private scaleTouchObserver: PartialObserver<OffsetTouchEvent> = {
-        next: (ev: OffsetTouchEvent) => this.scale(- ev.offsets[0].y),
+        next: (ev: OffsetTouchEvent) => {
+            if (!ev.zoom) {
+                this.scale(- ev.offsets[0].y);
+            }
+        },
+        error: (err) => console.log(err)
+    };
+
+    private scaleTouchZoomObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => {
+            if (ev.zoom) {
+                this.scale(- ev.zoom);
+            }
+        },
         error: (err) => console.log(err)
     };
 

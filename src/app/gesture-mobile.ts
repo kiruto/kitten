@@ -7,6 +7,7 @@ let globalSubject: ReplaySubject<OffsetTouchEvent>;
 
 function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
     let start: Offset[];
+    let zoomDist: number;
 
     return Observable.create((observer: Observer<OffsetTouchEvent>) => {
         el.addEventListener("touchstart", (ev: TouchEvent) => {
@@ -21,6 +22,17 @@ function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
             let event = ev as OffsetTouchEvent;
             if (!event.offsets) {
                 event.offsets = [];
+            }
+
+            if (event.touches.length < 2) {
+                event.zoom = 0;
+                zoomDist = null;
+            } else {
+                let p1 = event.touches.item(0);
+                let p2 = event.touches.item(1);
+                let currentDist = distance(p1.pageX, p1.pageY, p2.pageX, p2.pageY);
+                event.zoom = zoomDist? currentDist - zoomDist: 0;
+                zoomDist = currentDist;
             }
 
             for (let i = 0; i < ev.touches.length; i ++) {
@@ -43,6 +55,7 @@ function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
 
         el.addEventListener("touchend", (ev: TouchEvent) => {
             start = null;
+            zoomDist = null;
         }, false);
     });
 }
@@ -57,4 +70,10 @@ export function getTouchObservable(): Observable<OffsetTouchEvent> {
 
 export function getDOMTouchObservable(dom: HTMLElement): Observable<OffsetTouchEvent> {
     return getAnyTouchObservable(dom);
+}
+
+function distance(x1: number, y1: number, x2:number , y2: number) {
+    let calX = x2 - x1;
+    let calY = y2 - y1;
+    return Math.pow(calX * calX + calY * calY, 0.5);
 }
