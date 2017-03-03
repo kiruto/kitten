@@ -1,46 +1,76 @@
-# Flip Flapping!
-<img src="art/cover.jpg" alt="Papika" width="200"/>
+## kitten是什么
 
-使用node环境快速搭建TypeScript应用
+kitten是使用TypeScript编写的HTML5图片浏览器应用. kitten使用HTML5的两种特性来显示图片, 分别是canvas和css3. 其中PC端各浏览器可以使用[excanvas](https://github.com/arv/explorercanvas)使程序支持救版本浏览器; 手机平台可以使用css3的方式支持大部分手机浏览器. 
 
-|          | 环境       | 开发环境版本 | 是否支持最新版 |
-|----------|------------|--------------|:--------------:|
-| Runtime  | NodeJS     | v6.9.1       |       是       |
-| package  | NPM        | 4.0.2        |       是       |
-| 脚本语言 | TypeScript | ^2.1.6       |       是       |
-| 编译     | Webpack2   | ^2.2.1       |       是       |
-| 测试     | Karma      | ^1.4.1       |       是       |
+kitten只依赖[Rxjs](https://github.com/ReactiveX/rxjs), Rxjs的浏览器支持:
 
-## 准备工作
-必须使用[Node.js和NPM](https://nodejs.org/en/)环境
-- 支持Node v6 latest
-- 支持npm v4 latest
+[![Selenium Test Status](https://saucelabs.com/browser-matrix/rxjs5.svg)](https://saucelabs.com/u/rxjs5)
 
-## 安装
-1. fork或clone本项目
-```bash
-git clone https://github.com/kiruto/flapper
-```
+kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](https://github.com/kiruto/flapper)项目.
+
+## 使用方法
+1. clone本项目
+
+    ```bash
+    git clone https://github.com/kiruto/kitten
+    ```
+    
 2. 安装依赖环境
-```bash
-npm install
-```
 
-完成！现在可以在Flapper基础上开发了！
+    ```bash
+    npm install
+    ```
+    
+3. 编译项目
+
+    - 修改编译环境[./config/flapper.config.js](./config/flapper.config.js). 
+        ```javascript
+        module.exports = {
+            // 是否是测试环境
+            debug: true,
+            // 版本信息
+            version: '1.0.0'
+        };
+        ```
+    - 编译
+        ```bash
+        npm run build
+        ```
+        如果是生产环境, 将会使用[./config/environment.prop.js](./config/environment.prop.js)作为环境变量, 并编译成uglify js文件. 
+        编译结果在".dist"目录中. 
+
+4. 使用
+    在HTML文件<body>标签中引入上一步编译好的文件, 脚本成功加载后会看到一个window.kitten的变量（模块）, 通过该变量（模块）来使用kitten. 
 
 ## 单元测试
-1. 在./src目录下的所有**/*.spec.ts文件都被用来测试。本工程下[./src/app/flip-flappers.spec.ts](src/app/flip-flappers.spec.ts)是一个简单的测试实例。
+1. 在./src目录下的所有**/*.spec.ts文件都被用来测试. 
 2. 执行以下命令进行测试
 ```bash
 npm test
 ```
-如果没有修改环境变量, 可以看到一个chrome浏览器对脚本进行测试的过程。
 
-## 编译
-执行以下命令将index.ts为入口的程序编译，并输出在./dist下
-```bash
-npm run build
-```
+## API
+
+### 配置
+通过```window.kitten.ivConfig```变量控制. 
+- scale
+- move
+- touchScale
+- touchMove
+- brightness
+- contrast
+- scaleMinSize
+
+### ElementManager
+
+实现类为CanvasElementManager及CSSElementManager.
+
+- 构造函数
+- attr
+- loadImageUrls
+- changeMode
+- reset
+- destroy
 
 ## 环境变量
 可以直接修改环境变量文件
