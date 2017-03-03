@@ -64,7 +64,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 通过```window.kitten.ivConfig```变量控制. 
 * canvas
 
-    ```window.kitten.CanvasElementManager```的参数设置.
+    ```window.kitten.CanvasElementManager``` 的参数设置.
     
     - scale
     - move
