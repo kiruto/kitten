@@ -1,7 +1,7 @@
 import {style, attribute} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
 import {ImageStatus, newImagePosition} from "./interface/canvas-image-position";
-import {Subscription, Observable, ReplaySubject} from "rxjs";
+import {Subscription, Observable, ReplaySubject, Observer} from "rxjs";
 import {getWheelObservable} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {createImgs} from "./multiple-image-loader";
@@ -11,6 +11,7 @@ import {getTouchObservable} from "./gesture-mobile";
 import {ElementManager} from "./interface/element-manager";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
 import {CONFIGURATION} from "./configuration";
+import {EventEmitter} from "./event-emitter";
 /**
  * Created by yuriel on 2/22/17.
  *
@@ -38,11 +39,23 @@ export class CanvasElementManager implements ElementManager {
     /** Images download observable. Called each when complete download. */
     public readonly imageDownloadObservable = new ReplaySubject<HTMLImageElement>();
 
+    /** Image onDraw observable. */
+    public readonly toFrameObservable: Observable<ImageStatus> =
+        Observable.create((ob: Observer<ImageStatus>) => {
+            this.emitter.on("draw", {
+                next: val => ob.next(val),
+                error: err => console.log(err),
+                complete: () => {}
+            });
+        });
+
     /** The origin set of the background image DOM<img> */
     public imgOrigin: ElementOrigin;
 
     /** The origin set of the canvas DOM */
     public canvasOrigin: ElementOrigin;
+
+    private readonly emitter = new EventEmitter<ImageStatus>();
 
     /** The canvas' context. */
     private context: CanvasRenderingContext2D;
@@ -206,6 +219,7 @@ export class CanvasElementManager implements ElementManager {
             imageData.data[idx + 2] = ((((imageData.data[idx + 2] / 255) - 0.5) * contrast) + 0.5) * 255;
         }
         context.putImageData(imageData, this.imageStatus.offsetX, this.imageStatus.offsetY);
+        this.emitter.emit("draw", this.imageStatus);
     }
 
     /**
@@ -343,7 +357,7 @@ export class CanvasElementManager implements ElementManager {
                 break;
             case CanvasWorkMode.BRIGHTNESS_CONTRAST:
                 this.drugSubscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.brightnessConstrastTouchObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.brightnessContrastTouchObserver);
                 break;
             default:
                 break;
@@ -421,7 +435,7 @@ export class CanvasElementManager implements ElementManager {
         error: (err: any) => console.log(err)
     };
 
-    private brightnessConstrastTouchObserver: PartialObserver<OffsetTouchEvent> = {
+    private brightnessContrastTouchObserver: PartialObserver<OffsetTouchEvent> = {
         next: (ev: OffsetTouchEvent) => this.brightnessContrast(- ev.offsets[0].x, - ev.offsets[0].y),
         error: (err: any) => console.log(err)
     }

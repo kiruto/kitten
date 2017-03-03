@@ -1,5 +1,5 @@
 import {style, attribute} from "../libs";
-import {Observable, Subscription, ReplaySubject} from "rxjs";
+import {Observable, Subscription, ReplaySubject, Observer, Subject} from "rxjs";
 import {ImageItem} from "./interface/image-item";
 import {createImgs} from "./multiple-image-loader";
 import {getWheelObservable} from "./gesture-wheel";
@@ -9,6 +9,7 @@ import {CONFIGURATION} from "./configuration";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
 import {getTouchObservable} from "./gesture-mobile";
 import {getDragObservable} from "./gesture-mouse";
+import {EventEmitter} from "./event-emitter";
 /**
  * Created by yuriel on 2/28/17.
  *
@@ -33,6 +34,17 @@ export class CSSElementManager {
     readonly wrapperId: string;
     readonly imgId: string;
     readonly imageDownloadObservable = new ReplaySubject<HTMLImageElement>();
+
+    readonly toFrameObservable: Observable<ImageStatus> =
+        Observable.create((ob: Observer<ImageStatus>) => {
+            this.emitter.on("draw", {
+                next: val => ob.next(val),
+                error: err => console.log(err),
+                complete: () => {}
+            });
+        });
+
+    private readonly emitter = new EventEmitter<ImageStatus>();
 
     private imageItems: ImageItem[];
 
@@ -125,6 +137,10 @@ export class CSSElementManager {
                 this.drugSubscriber = getDragObservable().subscribe(this.moveObserver);
                 this.touchSubscriber = getTouchObservable().subscribe(this.moveTouchObserver);
                 break;
+            case CanvasWorkMode.BRIGHTNESS_CONTRAST:
+                this.drugSubscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
+                this.touchSubscriber = getTouchObservable().subscribe(this.brightnessContrastTouchObserver);
+                break;
             default:
                 break;
         }
@@ -196,6 +212,36 @@ export class CSSElementManager {
             this.move(incrementX,incrementY);
         },
         error: err => console.log(err)
+    };
+
+    private brightnessContrast(incrementX: number, incrementY: number) {
+        this.imageStatus.brightness += (incrementX * this.conf.BRIGHTNESS_RATIO);
+
+        if (this.imageStatus.brightness > 500) {
+            this.imageStatus.brightness = 500;
+        } else if (this.imageStatus.brightness < -500) {
+            this.imageStatus.brightness = -500;
+        }
+
+        this.imageStatus.contrast += (incrementY * this.conf.CONTRAST_RATIO);
+
+        if (this.imageStatus.contrast > 500) {
+            this.imageStatus.contrast = 500;
+        } else if (this.imageStatus.contrast < -500){
+            this.imageStatus.contrast = -500;
+        }
+
+        this.draw();
+    }
+
+    private brightnessContrastObserver: PartialObserver<MouseEvent> = {
+        next: (ev: MouseEvent) => this.brightnessContrast(ev.movementX, ev.movementY),
+        error: (err: any) => console.log(err)
+    };
+
+    private brightnessContrastTouchObserver: PartialObserver<OffsetTouchEvent> = {
+        next: (ev: OffsetTouchEvent) => this.brightnessContrast(- ev.offsets[0].x, - ev.offsets[0].y),
+        error: (err: any) => console.log(err)
     };
 
     private imageElements(): NodeListOf<HTMLImageElement> {
@@ -319,11 +365,15 @@ export class CSSElementManager {
 
     private draw() {
         let scale = 1 - this.imageStatus.scale * this.conf.SCALE_RATIO;
+        let contrast = (this.imageStatus.contrast ) + 100;
+        let brightness = (this.imageStatus.brightness) + 100;
         style(this.currentImageElement, {
             transform: `scale(${scale})`,
             top: `${this.imageStatus.offsetY * this.conf.MOVE_RATIO}%`,
             left: `${this.imageStatus.offsetX * this.conf.MOVE_RATIO}%`,
+            filter: `contrast(${contrast}%) brightness(${brightness}%)`
         });
+        this.emitter.emit("draw", this.imageStatus);
     }
 }
 

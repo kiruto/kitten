@@ -52,6 +52,11 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     ```bash
     npm test
     ```
+    
+## 环境变量
+可以直接修改环境变量文件
+- 测试环境: [environment.js](config/environment.js)
+- 生产环境: [environment.prod.js](config/environment.prod.js)
 
 ## API
 
@@ -70,11 +75,15 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 实现类为```window.kitten.CanvasElementManager```及```window.kitten.CSSElementManager```.
 
 - 构造函数
+- conf
 - attr
 - loadImageUrls
 - changeMode
 - reset
 - destroy
+- observable
+    * imageDownloadObservable
+    * toFrameObservable
 
 ## FAQ
 - 我是否需要用TypeScript?
@@ -96,12 +105,6 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     服务器同样需要开启CORS支持, 具体请参阅文档: [启用了 CORS 的图片](https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_enabled_image)
     
     有关crossorigin属性设置: [CORS settings attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes)
-
-
-## 环境变量
-可以直接修改环境变量文件
-- 测试环境: [environment.js](config/environment.js)
-- 生产环境: [environment.prod.js](config/environment.prod.js)
 
 ## License
 ```text
