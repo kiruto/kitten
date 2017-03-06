@@ -1,22 +1,23 @@
-import {style, attribute} from "../libs";
+import {style, attribute, clearInnerHTML} from "../libs";
 import {Observable, Subscription, ReplaySubject, Observer, Subject} from "rxjs";
 import {ImageItem} from "./interface/image-item";
 import {createImgs} from "./multiple-image-loader";
-import {getWheelObservable} from "./gesture-wheel";
+import {getWheelObservable, getWheelThresholdObserver} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {ImageStatus, newImagePosition} from "./interface/canvas-image-position";
 import {CONFIGURATION} from "./configuration";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
-import {getTouchObservable} from "./gesture-mobile";
+import {getTouchObservable, getTouchThresholdObserver} from "./gesture-mobile";
 import {getDragObservable} from "./gesture-mouse";
 import {EventEmitter} from "./event-emitter";
+import {ElementManager} from "./interface/element-manager";
 /**
  * Created by yuriel on 2/28/17.
  *
  * Core module.
  */
 
-export class CSSElementManager {
+export class CSSElementManager implements ElementManager{
 
     /**
      * These values must configured in CONFIGURATION before use, or default values will be used.
@@ -129,6 +130,9 @@ export class CSSElementManager {
         this.mode = mode;
 
         switch(mode) {
+            case CanvasWorkMode.CHANGE:
+                this.touchSubscriber = getTouchObservable().subscribe(getTouchThresholdObserver(this.next.bind(this), this.prev.bind(this)));
+                break;
             case CanvasWorkMode.SCALE:
                 this.drugSubscriber = getDragObservable().subscribe(this.scaleObserver);
                 this.touchSubscriber = getTouchObservable().subscribe(this.scaleTouchObserver);
@@ -144,6 +148,20 @@ export class CSSElementManager {
             default:
                 break;
         }
+    }
+
+    destroy() {
+        this.imageDownloadObservable.unsubscribe();
+        this.touchSubscriber = null;
+        this.drugSubscriber = null;
+        this.changeImageSubscriber = null;
+
+        if (this.changeImageSubscriber)
+            this.changeImageSubscriber.unsubscribe();
+        if (this.drugSubscriber)
+            this.drugSubscriber.unsubscribe();
+        if (this.touchSubscriber)
+            this.touchSubscriber.unsubscribe();
     }
 
     private scale(increment: number) {
@@ -285,33 +303,21 @@ export class CSSElementManager {
                     attribute(el, {
                         "class": `iv-image ${this.rootId}-ivi`
                     });
+                    style(el, { display: "none" })
                 }
                 wrapper.appendChild(el);
             },
             error: err => console.log(err),
             complete: () => {
-                this.changeImageSubscriber = getWheelObservable().subscribe(this.wheelObserver);
+                this.changeImageSubscriber = getWheelObservable()
+                    .subscribe(getWheelThresholdObserver(this.next.bind(this), this.prev.bind(this)));
                 this.zoomSubscriber = getTouchObservable().subscribe(this.scaleTouchZoomObserver);
                 this.displayImage(this.imageElements()[0]);
             }
         });
     }
 
-    private wheelObserver: PartialObserver<WheelEvent> = {
-        next: ev => {
-            if (ev.deltaY > 0) {
-                this.loadNextImage();
-            } else if (ev.deltaY < 0) {
-                this.loadPrevImage();
-            }
-        },
-        error: err => {
-
-        },
-        complete: () => {}
-    };
-
-    private loadNextImage() {
+    next() {
         let url = this.currentImageElement.src;
         let item = this.getImageItemByUrl(url);
         let index = this.imageItems.indexOf(item);
@@ -322,7 +328,7 @@ export class CSSElementManager {
         this.displayImage(this.getImageElementByUrl(nextItem.url));
     }
 
-    private loadPrevImage() {
+    prev() {
         let url = this.currentImageElement.src;
         let item = this.getImageItemByUrl(url);
         let index = this.imageItems.indexOf(item);

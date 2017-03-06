@@ -1,13 +1,13 @@
-import {style, attribute} from "../libs";
+import {style, attribute, clearInnerHTML} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
 import {ImageStatus, newImagePosition} from "./interface/canvas-image-position";
 import {Subscription, Observable, ReplaySubject, Observer} from "rxjs";
-import {getWheelObservable} from "./gesture-wheel";
+import {getWheelObservable, getWheelThresholdObserver} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {createImgs} from "./multiple-image-loader";
 import {ImageItem} from "./interface/image-item";
 import {getDragObservable} from "./gesture-mouse";
-import {getTouchObservable} from "./gesture-mobile";
+import {getTouchObservable, getTouchThresholdObserver} from "./gesture-mobile";
 import {ElementManager} from "./interface/element-manager";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
 import {CONFIGURATION} from "./configuration";
@@ -254,7 +254,9 @@ export class CanvasElementManager implements ElementManager {
             error: err => {
             },
             complete: () => {
-                this.changeImageSubscriber = getWheelObservable().subscribe(this.wheelObserver);
+                clearInnerHTML(this.rootId);
+                this.changeImageSubscriber = getWheelObservable()
+                    .subscribe(getWheelThresholdObserver(this.next.bind(this), this.prev.bind(this)));
                 this.renderImage(this.imageElements[0]);
             }
         });
@@ -272,25 +274,10 @@ export class CanvasElementManager implements ElementManager {
         });
     }
 
-    private wheelObserver: PartialObserver<WheelEvent> = {
-        next: ev => {
-            if (ev.deltaY > 0) {
-                this.loadNextImage();
-            } else if (ev.deltaY < 0) {
-                this.loadPrevImage();
-            }
-        },
-        error: err => {
-
-        },
-        complete: () => {}
-    };
-
     /**
      * Replace old element with new element and draw.
      */
-
-    private loadNextImage() {
+    next() {
         let url = this.currentImageElement.src;
         let item = this.getImageItemByUrl(url);
         let index = this.imageItems.indexOf(item);
@@ -302,7 +289,7 @@ export class CanvasElementManager implements ElementManager {
         this.renderImage(this.currentImageElement);
     }
 
-    private loadPrevImage() {
+    prev() {
         let url = this.currentImageElement.src;
         let item = this.getImageItemByUrl(url);
         let index = this.imageItems.indexOf(item);
@@ -347,6 +334,9 @@ export class CanvasElementManager implements ElementManager {
         this.mode = mode;
 
         switch(mode) {
+            case CanvasWorkMode.CHANGE:
+                this.touchSubscriber = getTouchObservable().subscribe(getTouchThresholdObserver(this.next.bind(this), this.prev.bind(this)));
+                break;
             case CanvasWorkMode.SCALE:
                 this.drugSubscriber = getDragObservable().subscribe(this.scaleObserver);
                 this.touchSubscriber = getTouchObservable().subscribe(this.scaleTouchObserver);

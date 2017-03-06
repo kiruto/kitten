@@ -1,4 +1,7 @@
 import {Observable, Observer, ReplaySubject} from "rxjs";
+import {EventEmitter} from "./event-emitter";
+import {CONFIGURATION} from "./configuration";
+import {PartialObserver} from "rxjs/Observer";
 /**
  * Created by yuriel on 2/27/17.
  */
@@ -19,6 +22,8 @@ function getAnyTouchObservable(el: any): Observable<OffsetTouchEvent> {
         }, false);
 
         el.addEventListener("touchmove", (ev: TouchEvent) => {
+
+            /** for move gesture */
             let event = ev as OffsetTouchEvent;
             if (!event.offsets) {
                 event.offsets = [];
@@ -70,6 +75,27 @@ export function getTouchObservable(): Observable<OffsetTouchEvent> {
 
 export function getDOMTouchObservable(dom: HTMLElement): Observable<OffsetTouchEvent> {
     return getAnyTouchObservable(dom);
+}
+
+export function getTouchThresholdObserver(next: () => void, prev: () => void): PartialObserver<OffsetTouchEvent>  {
+    let wheelOffsetY = 0;
+    return {
+        next: ev => {
+            wheelOffsetY += ev.offsets[0].y;
+            if (wheelOffsetY > CONFIGURATION.gesture.changeImageThreshold || wheelOffsetY < - CONFIGURATION.gesture.changeImageThreshold) {
+                if (ev.offsets[0].y > 0) {
+                    next();
+                } else if (ev.offsets[0].y < 0) {
+                    prev();
+                }
+                wheelOffsetY = 0;
+            }
+        },
+        error: err => {
+
+        },
+        complete: () => {}
+    };
 }
 
 function distance(x1: number, y1: number, x2:number , y2: number) {

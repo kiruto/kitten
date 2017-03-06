@@ -44,6 +44,10 @@ describe("CSS element manager", () => {
             document.getElementById(rootId).remove();
         });
 
+        attachActionTo(rootId, "change", ev => {
+            mgr.changeMode(CanvasWorkMode.CHANGE);
+        });
+
         attachActionTo(rootId, "move", ev => {
             mgr.changeMode(CanvasWorkMode.MOVE);
         });

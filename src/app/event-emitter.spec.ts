@@ -2,7 +2,7 @@ import {EventEmitter} from "./event-emitter";
 /**
  * Created by yuriel on 3/3/17.
  */
-describe("Event emotter", () => {
+describe("Event emitter", () => {
     it("should resolve events.", done => {
         let emitter = new EventEmitter<Object>();
 
@@ -26,7 +26,7 @@ describe("Event emotter", () => {
         emitter.on("event3", {
             next: val => {
                 expect(val).toBe(event3);
-                console.log("done");
+                done();
             }
         });
 

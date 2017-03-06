@@ -12,5 +12,7 @@ export interface ElementManager {
     loadImageUrls(urls: string[]): void;
     changeMode(mode: CanvasWorkMode): void;
     reset(): void;
+    prev(): void;
+    next(): void;
     destroy(): void;
 }

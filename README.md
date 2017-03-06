@@ -43,7 +43,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
         编译结果在".dist"目录中. 
 
 4. 使用
-    在HTML文件<body>标签中引入上一步编译好的文件, 脚本成功加载后会看到一个```window.kitten```的变量(模块), 通过该变量(模块)来使用kitten. 
+    在HTML的body标签中引入上一步编译好的文件, 脚本成功加载后会看到一个```window.kitten```的变量(模块), 通过该变量(模块)来使用kitten. 
 
 ## 单元测试
 1. 在./src目录下的所有**/*.spec.ts文件都被用来测试. 
@@ -98,7 +98,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     HTML:
     
     ```html
-    <div id="desktop" />
+    <div id="desktop">loading...</div>
     ```
     
     JavaScript:
@@ -157,6 +157,14 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 - reset()
 
     复位. 浏览原始图片.
+    
+- prev()
+
+    切换前一张图片. 
+
+- next()
+
+    切换后一张图片. 
     
 - destroy()
 

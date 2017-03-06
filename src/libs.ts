@@ -27,3 +27,7 @@ export function define(name: string, obj: any) {
         throw `${name} is already defined.`;
     }
 }
+
+export function clearInnerHTML(id: string) {
+    // document.getElementById(id).innerHTML = "";
+}

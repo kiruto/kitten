@@ -1,4 +1,7 @@
 import {Observable, Observer, ReplaySubject} from "rxjs";
+import {EventEmitter} from "./event-emitter";
+import {CONFIGURATION} from "./configuration";
+import {PartialObserver} from "rxjs/Observer";
 /**
  * Created by yuriel on 2/22/17.
  */
@@ -91,4 +94,25 @@ export function getWheelObservable(): Observable<WheelEvent> {
 
 export function getDOMWheelObservable(el: Element): Observable<WheelEvent> {
     return getAnyWheelObservable(el);
+}
+
+export function getWheelThresholdObserver(next: () => void, prev: () => void): PartialObserver<WheelEvent> {
+    let wheelOffsetY = 0;
+    return {
+        next: ev => {
+            wheelOffsetY += ev.deltaY;
+            if (wheelOffsetY > CONFIGURATION.wheel.changeImageThreshold || wheelOffsetY < - CONFIGURATION.wheel.changeImageThreshold) {
+                if (ev.deltaY > 0) {
+                    next();
+                } else if (ev.deltaY < 0) {
+                    prev();
+                }
+                wheelOffsetY = 0;
+            }
+        },
+        error: err => {
+
+        },
+        complete: () => {}
+    };
 }
