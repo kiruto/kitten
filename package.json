@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack",
+    "build-prod": "webpack --config webpack.config.prod.js",
     "test": "karma start",
     "tsc": "tsc"
   },
