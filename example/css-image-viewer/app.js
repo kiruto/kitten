@@ -3,6 +3,8 @@
  */
 (function(imageUrls) {
     var rootElement = document.getElementById("kitten-content");
+    kitten.ivConfig.css.move = 0.7;
+    kitten.ivConfig.css.touchMove = 0.4;
     var kittenMgr = new kitten.CSSElementManager("kitten-content");
     function Action(id, icon, iconActive, canActive, action) {
         this.id = id;
@@ -81,8 +83,7 @@
             var current = kittenMgr.getCurrentImageUrl();
             infoTexts["top-right"].innerText = [
                 "One Shot",
-                "Img: " + (list.indexOf(current) + 1) + "/" + list.length,
-                current
+                "Img: " + (list.indexOf(current) + 1) + "/" + list.length
             ].join("\n");
 
             /** The bottom-right side text */
