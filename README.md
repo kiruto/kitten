@@ -47,7 +47,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
         编译结果在".dist"目录中. 
 
 4. 使用
-    在HTML的body标签中引入上一步编译好的文件, 脚本成功加载后会看到一个```window.kitten```的变量(模块), 通过该变量(模块)来使用kitten. 
+    在HTML的body标签中引入上一步编译好的文件, 脚本成功加载后会看到一个 ```window.kitten``` 的变量(模块), 通过该变量(模块)来使用kitten. 
 
 ## 单元测试
 1. 在./src目录下的所有**/*.spec.ts文件都被用来测试. 
@@ -65,10 +65,12 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 ## API
 
 ### 配置
-通过```window.kitten.ivConfig```变量控制. 
+通过 ```window.kitten.ivConfig``` 变量控制. 
 * canvas
 
     ```window.kitten.CanvasElementManager``` 的参数设置.
+    
+    ```window.kitten.ivConfig.canvas``` :
     
     - scale
     - move
@@ -82,6 +84,8 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 
     ```window.kitten.CSSElementManager``` 的参数设置.
     
+    ```window.kitten.ivConfig.css``` :
+    
     - scale
     - move
     - touchScale
@@ -94,11 +98,11 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 
 ### ElementManager
 
-实现类为```window.kitten.CanvasElementManager```及```window.kitten.CSSElementManager```.
+实现类为 ```window.kitten.CanvasElementManager``` 及 ```window.kitten.CSSElementManager``` .
 
 - constructor(rootId)
 
-    构造器. 接受一个string型的id作为参数. 参数为需要展示图片的父div的id, 父div的```innerHTML```最好为空.
+    构造器. 接受一个string型的id作为参数. 参数为需要展示图片的父div的id, 父div的 ```innerHTML``` 最好为空.
     
     HTML:
     
@@ -136,10 +140,14 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     
 - loadImageUrls(urls)
     
-    读取图片列表.
+    加载图片列表.
     
     ```javascript
-    mgr.loadImageUrls(["http://exyui.com/kitten_example_1.jpg", "http://exyui.com/kitten_example_2.jpg", /* etc...*/]);
+    mgr.loadImageUrls([
+      "http://exyui.com/kitten_example_1.jpg",
+      "http://exyui.com/kitten_example_2.jpg",
+      /* etc...*/
+    ]);
     ```
 
 - changeMode(mode)

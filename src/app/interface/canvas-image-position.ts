@@ -7,6 +7,14 @@ export interface ImageStatus {
     scale: number;
     brightness: number;
     contrast: number;
+    parse?(conf: any): ImageStatusText;
+}
+
+export interface ImageStatusText {
+    origin: string;
+    scale: string;
+    brightness: string;
+    contrast: string;
 }
 
 export function newImagePosition(): ImageStatus {

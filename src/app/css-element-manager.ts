@@ -1,10 +1,10 @@
-import {style, attribute, clearInnerHTML} from "../libs";
+import {style, attribute} from "../libs";
 import {Observable, Subscription, ReplaySubject, Observer, Subject} from "rxjs";
 import {ImageItem} from "./interface/image-item";
 import {createImgs} from "./multiple-image-loader";
 import {getWheelObservable, getWheelThresholdObserver} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
-import {ImageStatus, newImagePosition} from "./interface/canvas-image-position";
+import {ImageStatus, ImageStatusText} from "./interface/canvas-image-position";
 import {CONFIGURATION} from "./configuration";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
 import {getTouchObservable, getTouchThresholdObserver} from "./gesture-mobile";
@@ -93,7 +93,7 @@ export class CSSElementManager implements ElementManager{
 
     /** Reset all the changes */
     reset() {
-        this.imageStatus = newImagePosition();
+        this.imageStatus = new CSSImageStatus(this.conf);
         this.draw();
     }
 
@@ -277,8 +277,6 @@ export class CSSElementManager implements ElementManager{
     }
 
     private setImageList(list: string[]) {
-        this.imageUrlList = [];
-
         let wrapper = this.getWrapperView();
 
         Array.prototype
@@ -319,11 +317,10 @@ export class CSSElementManager implements ElementManager{
                     attribute(el, this.commonAttr);
                 }
                 wrapper.appendChild(el);
-
-                this.imageUrlList.push(el.src);
             },
             error: err => console.log(err),
             complete: () => {
+                this.imageUrlList = list;
                 this.changeImageSubscriber = getWheelObservable()
                     .subscribe(getWheelThresholdObserver(this.next.bind(this), this.prev.bind(this)));
                 this.zoomSubscriber = getTouchObservable().subscribe(this.scaleTouchZoomObserver);
@@ -356,7 +353,7 @@ export class CSSElementManager implements ElementManager{
 
     private displayImage(el: HTMLImageElement) {
         if (!this.imageStatus) {
-            this.imageStatus = newImagePosition();
+            this.imageStatus = new CSSImageStatus(this.conf);
         }
 
         if (this.currentImageElement != el) {
@@ -414,4 +411,23 @@ function createWrapper(id: string): HTMLDivElement {
         height: "100%",
     });
     return wrapper;
+}
+
+class CSSImageStatus implements ImageStatus {
+    offsetX: number = 0;
+    offsetY: number = 0;
+    scale: number = 0;
+    brightness: number = 0;
+    contrast: number = 0;
+
+    constructor(private conf: any) {};
+
+    parse(): ImageStatusText {
+        return {
+            origin: `top: ${(this.offsetY * this.conf.MOVE_RATIO).toFixed(2)}%, left: ${(this.offsetX * this.conf.MOVE_RATIO).toFixed(2)}%`,
+            scale: `${((1 - this.scale * this.conf.SCALE_RATIO) * 100).toFixed(2)}%`,
+            brightness: `${((this.brightness) + 100).toFixed(2)}%`,
+            contrast: `${((this.contrast ) + 100).toFixed(2)}%`
+        } as ImageStatusText;
+    }
 }
