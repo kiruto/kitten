@@ -8,6 +8,14 @@ kitten只依赖[Rxjs](https://github.com/ReactiveX/rxjs), Rxjs的浏览器支持
 
 kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](https://github.com/kiruto/flapper)项目.
 
+## Demo
+
+一个微小的使用示例: 
+
+- [css-image-viewer-demo](http://htmlpreview.github.io/?https://github.com/kiruto/kitten/blob/master/example/css-image-viewer/index.html)
+
+    [源码: ./example/css-image-viewer](./example/css-image-viewer)
+
 ## 使用方法
 1. clone本项目
 
@@ -22,6 +30,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     ```
     
 3. 编译项目
+
     - 修改编译环境[./config/flapper.config.js](./config/flapper.config.js).
         
         ```javascript
@@ -47,8 +56,9 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
         编译结果在".dist"目录中. 
 
 4. 使用
-    在HTML的body标签中引入上一步编译好的文件, 脚本成功加载后会看到一个 ```window.kitten``` 的变量(模块), 通过该变量(模块)来使用kitten. 
 
+    在HTML的body标签中引入上一步编译好的文件, 脚本成功加载后会看到一个 ```window.kitten``` 的变量(模块), 通过该变量(模块)来使用kitten.
+     
 ## 单元测试
 1. 在./src目录下的所有**/*.spec.ts文件都被用来测试. 
 2. 执行以下命令进行测试
