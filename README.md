@@ -10,9 +10,11 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 
 ## Demo
 
-一个微小的使用示例: 
+一点微小的使用示例: 
 
 - [css-image-viewer-demo](http://htmlpreview.github.io/?https://github.com/kiruto/kitten/blob/master/example/css-image-viewer/index.html)
+
+    主要演示了kitten CSS3模式的基本使用方法
 
     [源码: ./example/css-image-viewer](./example/css-image-viewer)
 
