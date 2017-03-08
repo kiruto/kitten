@@ -100,10 +100,17 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     
     - scale
     - move
+    
+        建议范围为(0.0, 1.0)内的number, 数值越大速度越快.
+        
     - touchScale
+    
         范围为(0.0, 1.0)内的number, 数值越大速度越快.
+        
     - touchMove
-        范围为(0.0, 1.0)内的number, 数值越大速度越快.
+    
+        建议范围为(0.0, 1.0)内的number, 数值越大速度越快.
+        
     - brightness
     - contrast
     - scaleMinSize
@@ -263,6 +270,9 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
             
             // 对比度
             contrast: number;
+            
+            // 返回一个可供人阅读的状态信息
+            parse();
         }
         ```
 

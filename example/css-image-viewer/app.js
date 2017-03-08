@@ -1,10 +1,17 @@
 /**
  * Created by yuriel on 3/8/17.
+ *
+ * kitten native-js example.
  */
 (function(imageUrls) {
+
+    // Global kitten root view
     var rootElement = document.getElementById("kitten-content");
+
+    /** Change default kitten config */
     kitten.ivConfig.css.move = 0.7;
     kitten.ivConfig.css.touchMove = 0.4;
+
     var kittenMgr = new kitten.CSSElementManager("kitten-content");
     function Action(id, icon, iconActive, canActive, action) {
         this.id = id;
@@ -14,6 +21,8 @@
         this.action = action;
         this.elements = {};
     }
+
+    // Set an action activate (high-lighting the icon).
     function active(action) {
         action.action();
         for (var k in kittenActions) {
@@ -21,6 +30,8 @@
             cur.elements.img.setAttribute("src", cur === action? cur.iconActive: cur.icon);
         }
     }
+
+    // Actions on toolbar
     var kittenActions = {
         change: new Action("kitten--action-prev_next", "img/prev_next.png", "img/prev_next_active.png", true, function() {
             kittenMgr.changeMode(kitten.mode.CHANGE);
@@ -44,6 +55,8 @@
             kittenMgr.next();
         })
     };
+
+    // Displaying image information
     function newInfoTextSpan(position) {
         var span = document.createElement("span");
         span.setAttribute("class", "kitten--info--" + position + " kitten--info-text");
@@ -60,7 +73,11 @@
         "kitten image viewer example",
         "here are some texts"
     ].join("\n");
+
+    /** Starting to load images. */
     kittenMgr.loadImageUrls(imageUrls);
+
+    /** Image loading callbacks */
     kittenMgr.imageDownloadObservable.subscribe({
         next: function (element) {
 
@@ -100,7 +117,7 @@
         }
     });
 
-    /** Create action bar */
+    // Create action bar
     (function(id) {
         var rootEl = document.getElementById(id);
         for (var k in kittenActions) {
