@@ -15,4 +15,6 @@ export interface ElementManager {
     prev(): void;
     next(): void;
     destroy(): void;
+    getImageUrlList(): string[];
+    getCurrentImageUrl(): string;
 }

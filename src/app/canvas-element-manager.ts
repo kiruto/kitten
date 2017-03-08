@@ -92,6 +92,8 @@ export class CanvasElementManager implements ElementManager {
 
     private destroyed = false;
 
+    private imageUrlList: string[];
+
     constructor(private rootId: string) {
         this.canvasId = `ivc-${rootId}`;
         this.imgId = `ivi-${rootId}`;
@@ -227,6 +229,8 @@ export class CanvasElementManager implements ElementManager {
      * @param list
      */
     private setImageList(list: string[]) {
+        this.imageUrlList = [];
+
         Observable.from(list)
             .reduce((acc: ImageItem[], one: string, index: number) => {
                 acc.push({
@@ -250,6 +254,7 @@ export class CanvasElementManager implements ElementManager {
                     attribute(el, this.commonAttr);
                 }
                 this.imageElements.push(el);
+                this.imageUrlList.push(el.src);
             },
             error: err => {
             },
@@ -321,6 +326,14 @@ export class CanvasElementManager implements ElementManager {
             this.drugSubscriber.unsubscribe();
         if (this.touchSubscriber)
             this.touchSubscriber.unsubscribe();
+    }
+
+    getImageUrlList(): string[] {
+        return this.imageUrlList;
+    }
+
+    getCurrentImageUrl(): string {
+        return this.currentImageElement.src;
     }
 
     changeMode(mode: CanvasWorkMode) {

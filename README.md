@@ -36,7 +36,11 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     - 编译
         
         ```bash
+        # read envireonment from config file "./config/flapper.config.js"
         npm run build
+        
+        # or use production envireonment directly
+        mpm run build-prod
         ```
         
         如果是生产环境, 将会使用[./config/environment.prop.js](./config/environment.prop.js)作为环境变量, 并编译成uglify js文件. 
@@ -93,6 +97,7 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 实现类为```window.kitten.CanvasElementManager```及```window.kitten.CSSElementManager```.
 
 - constructor(rootId)
+
     构造器. 接受一个string型的id作为参数. 参数为需要展示图片的父div的id, 父div的```innerHTML```最好为空.
     
     HTML:
@@ -145,6 +150,9 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
     mgr.changeMode(kitten.mode.SCALE);
     ```
     
+    * CHANGE
+        更换图片. PC端通过鼠标滚轮换图, 手机端通过单指拖动换图;
+    
     * SCALE
         缩放. '鼠标Y轴位移'或'手指拖动手机屏幕焦点Y轴'控制图片大小;
         
@@ -165,6 +173,14 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 - next()
 
     切换后一张图片. 
+    
+- getImageUrlList()
+
+    获取已加载的图片URL列表. 
+    
+- getCurrentImageUrl()
+
+    获取当前浏览的图片URL. 
     
 - destroy()
 

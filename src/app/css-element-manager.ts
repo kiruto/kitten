@@ -75,6 +75,8 @@ export class CSSElementManager implements ElementManager{
     /** Work mode. */
     private mode: CanvasWorkMode;
 
+    private imageUrlList: string[];
+
     constructor(private rootId: string) {
         this.wrapperId = `ivd-${rootId}`;
         this.imgId = `ivi-${rootId}`;
@@ -162,6 +164,14 @@ export class CSSElementManager implements ElementManager{
             this.drugSubscriber.unsubscribe();
         if (this.touchSubscriber)
             this.touchSubscriber.unsubscribe();
+    }
+
+    getImageUrlList(): string[] {
+        return this.imageUrlList;
+    }
+
+    getCurrentImageUrl(): string {
+        return this.currentImageElement.src;
     }
 
     private scale(increment: number) {
@@ -267,6 +277,8 @@ export class CSSElementManager implements ElementManager{
     }
 
     private setImageList(list: string[]) {
+        this.imageUrlList = [];
+
         let wrapper = this.getWrapperView();
 
         Array.prototype
@@ -292,20 +304,23 @@ export class CSSElementManager implements ElementManager{
 
         this.imageDownloadObservable.subscribe({
             next: el => {
-                attribute(el, { ondragstart: "return false", ondrop: "return false" });
+                attribute(el, {
+                    ondragstart: "return false",
+                    ondrop: "return false",
+                    "class": `iv-image ${this.rootId}-ivi`
+                });
                 style(el, {
                     transition: "transform 100ms ease",
                     position: "absolute",
-                    "user-select": "none"
+                    "user-select": "none",
+                    display: "none"
                 });
                 if (this.commonAttr) {
                     attribute(el, this.commonAttr);
-                    attribute(el, {
-                        "class": `iv-image ${this.rootId}-ivi`
-                    });
-                    style(el, { display: "none" })
                 }
                 wrapper.appendChild(el);
+
+                this.imageUrlList.push(el.src);
             },
             error: err => console.log(err),
             complete: () => {
@@ -376,7 +391,11 @@ export class CSSElementManager implements ElementManager{
         style(this.currentImageElement, {
             transform: `scale(${scale})`,
             top: `${this.imageStatus.offsetY * this.conf.MOVE_RATIO}%`,
+            // bottom: `${100 - this.imageStatus.offsetY * this.conf.MOVE_RATIO}%`,
+            bottom: "0",
             left: `${this.imageStatus.offsetX * this.conf.MOVE_RATIO}%`,
+            // right: `${100 - this.imageStatus.offsetX * this.conf.MOVE_RATIO}%`,
+            right: "0",
             filter: `contrast(${contrast}%) brightness(${brightness}%)`
         });
         this.emitter.emit("draw", this.imageStatus);
