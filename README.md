@@ -42,7 +42,6 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
             version: '1.0.0'
         };
         ```
-        
     - 编译
         
         ```bash
