@@ -94,6 +94,7 @@ export class CSSElementManager implements ElementManager{
     /** Reset all the changes */
     reset() {
         this.imageStatus = new CSSImageStatus(this.conf);
+        this.measureImage(this.imageElements());
         this.draw();
     }
 
@@ -354,6 +355,7 @@ export class CSSElementManager implements ElementManager{
     private displayImage(el: HTMLImageElement) {
         if (!this.imageStatus) {
             this.imageStatus = new CSSImageStatus(this.conf);
+            this.measureImage(this.imageElements());
         }
 
         if (this.currentImageElement != el) {
@@ -381,21 +383,62 @@ export class CSSElementManager implements ElementManager{
         });
     }
 
+    private calScale(input: number): number {
+        return 1 - input * this.conf.SCALE_RATIO;
+    }
+
+    private inverseCalScale(input: number): number {
+        return (1 - input) / this.conf.SCALE_RATIO;
+    }
+
+    private calMove(input: number): number {
+        return input * this.conf.MOVE_RATIO;
+    }
+
+    private inverseCalMove(input: number): number {
+        return input / this.conf.MOVE_RATIO;
+    }
+
     private draw() {
-        let scale = 1 - this.imageStatus.scale * this.conf.SCALE_RATIO;
-        let contrast = (this.imageStatus.contrast ) + 100;
+        let scale = this.calScale(this.imageStatus.scale);
+        let contrast = (this.imageStatus.contrast) + 100;
         let brightness = (this.imageStatus.brightness) + 100;
-        style(this.currentImageElement, {
+        let styles = {
             transform: `scale(${scale})`,
-            top: `${this.imageStatus.offsetY * this.conf.MOVE_RATIO}%`,
-            // bottom: `${100 - this.imageStatus.offsetY * this.conf.MOVE_RATIO}%`,
+            top: `${this.calMove(this.imageStatus.offsetY)}%`,
             bottom: "0",
-            left: `${this.imageStatus.offsetX * this.conf.MOVE_RATIO}%`,
-            // right: `${100 - this.imageStatus.offsetX * this.conf.MOVE_RATIO}%`,
+            left: `${this.calMove(this.imageStatus.offsetX)}%`,
             right: "0",
             filter: `contrast(${contrast}%) brightness(${brightness}%)`
-        });
+        };
+        style(this.currentImageElement, styles);
         this.emitter.emit("draw", this.imageStatus);
+    }
+
+    private measureImage(imgList: NodeListOf<HTMLImageElement>) {
+        if (!this.imageStatus)
+            return;
+        let rootView = document.getElementById(this.rootId);
+        let isWide = rootView.offsetWidth >= rootView.offsetHeight;
+        let maxsize = 0;
+        let originImageSize = isWide? rootView.offsetHeight: rootView.offsetWidth;
+        let maxsizeElement: HTMLImageElement;
+        Array.prototype.forEach.call(imgList, (el: HTMLImageElement) => {
+            let size = isWide? el.height: el.width;
+            if (size > maxsize) {
+                maxsize = size;
+                maxsizeElement = el;
+            }
+        });
+        let scale = originImageSize / maxsize;
+        this.imageStatus.scale = this.inverseCalScale(scale);
+
+        // Center images
+        if (scale < 1 && !isWide) {
+            this.imageStatus.offsetX = this.inverseCalMove((rootView.offsetWidth - maxsizeElement.width) * 100 / (2 * rootView.offsetWidth));
+        } else if (scale < 1 && isWide) {
+            this.imageStatus.offsetY = this.inverseCalMove((rootView.offsetHeight - maxsizeElement.height) * 100 / (2 * rootView.offsetHeight));
+        }
     }
 }
 
