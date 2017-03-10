@@ -8,6 +8,14 @@ kitten只依赖[Rxjs](https://github.com/ReactiveX/rxjs), Rxjs的浏览器支持
 
 kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](https://github.com/kiruto/flapper)项目.
 
+## "kitten"是什么？
+
+<img src="art/cover.png" alt="Papika" height="300"/>
+
+> Kitten, 在黑奇萨威尔醒来, 失去了之前的记忆. 因为和达斯缇(黑猫)在一起所以被周围的人叫作Kitten. 是个活泼且好奇心旺盛的女孩. Kitten可以通过改变重力轻易将世界翻转.
+
+—— 来自 [Gravity Daze](http://www.jp.playstation.com/scej/title/gravitydaze/)
+
 ## Demo
 
 一点微小的使用示例: 
