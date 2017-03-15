@@ -2,22 +2,23 @@ import {style, attribute} from "../libs";
 import {Observable, Subscription, ReplaySubject, Observer, Subject} from "rxjs";
 import {ImageItem} from "./interface/image-item";
 import {createImgs} from "./multiple-image-loader";
-import {getWheelObservable, getWheelThresholdObserver} from "./gesture-wheel";
+import {getWheelThresholdObserver, getDOMWheelObservable} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {ImageStatus, ImageStatusText} from "./interface/canvas-image-position";
 import {CONFIGURATION} from "./configuration";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
-import {getTouchObservable, getTouchThresholdObserver} from "./gesture-mobile";
-import {getDragObservable} from "./gesture-mouse";
+import {getTouchThresholdObserver, getDOMTouchObservable} from "./gesture-mobile";
+import {getDOMODragObservable} from "./gesture-mouse";
 import {EventEmitter} from "./event-emitter";
 import {ElementManager} from "./interface/element-manager";
+import {GestureElement, GestureObservable} from "./interface/gesture-abservable";
 /**
  * Created by yuriel on 2/28/17.
  *
  * Core module.
  */
 
-export class CSSElementManager implements ElementManager{
+export class CSSElementManager implements ElementManager {
 
     /**
      * These values must configured in CONFIGURATION before use, or default values will be used.
@@ -64,7 +65,7 @@ export class CSSElementManager implements ElementManager{
     private changeImageSubscriber: Subscription;
 
     /** Called when captured mouse events. */
-    private drugSubscriber: Subscription;
+    private dragSubscriber: Subscription;
 
     /** Called on mobile. */
     private touchSubscriber: Subscription;
@@ -111,19 +112,24 @@ export class CSSElementManager implements ElementManager{
         }
     }
 
-    getWrapperView(): HTMLDivElement {
-        let view = document.getElementById(this.wrapperId) as HTMLDivElement;
+    getWrapperView(): HTMLDivElement & GestureElement {
+        let view = document.getElementById(this.wrapperId) as HTMLDivElement & GestureElement;
         if(!view) {
             let root = document.getElementById(this.rootId);
-            view = createWrapper(this.wrapperId);
+            view = createWrapper(this.wrapperId) as HTMLDivElement & GestureElement;
+            view.gesture = {
+                drag: getDOMODragObservable(view),
+                wheel: getDOMWheelObservable(view),
+                touch: getDOMTouchObservable(view)
+            };
             root.appendChild(view);
         }
-        return view;
+        return view as HTMLDivElement & GestureElement;
     }
 
     changeMode(mode: CanvasWorkMode) {
-        if (this.drugSubscriber) {
-            this.drugSubscriber.unsubscribe();
+        if (this.dragSubscriber) {
+            this.dragSubscriber.unsubscribe();
         }
 
         if(this.touchSubscriber) {
@@ -134,19 +140,22 @@ export class CSSElementManager implements ElementManager{
 
         switch(mode) {
             case CanvasWorkMode.CHANGE:
-                this.touchSubscriber = getTouchObservable().subscribe(getTouchThresholdObserver(this.next.bind(this), this.prev.bind(this)));
+                this.touchSubscriber = this.getWrapperView()
+                    .gesture
+                    .touch
+                    .subscribe(getTouchThresholdObserver(this.next.bind(this), this.prev.bind(this)));
                 break;
             case CanvasWorkMode.SCALE:
-                this.drugSubscriber = getDragObservable().subscribe(this.scaleObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.scaleTouchObserver);
+                this.dragSubscriber = this.getWrapperView().gesture.drag.subscribe(this.scaleObserver);
+                this.touchSubscriber = this.getWrapperView().gesture.touch.subscribe(this.scaleTouchObserver);
                 break;
             case CanvasWorkMode.MOVE:
-                this.drugSubscriber = getDragObservable().subscribe(this.moveObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.moveTouchObserver);
+                this.dragSubscriber = this.getWrapperView().gesture.drag.subscribe(this.moveObserver);
+                this.touchSubscriber = this.getWrapperView().gesture.touch.subscribe(this.moveTouchObserver);
                 break;
             case CanvasWorkMode.BRIGHTNESS_CONTRAST:
-                this.drugSubscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.brightnessContrastTouchObserver);
+                this.dragSubscriber = this.getWrapperView().gesture.drag.subscribe(this.brightnessContrastObserver);
+                this.touchSubscriber = this.getWrapperView().gesture.touch.subscribe(this.brightnessContrastTouchObserver);
                 break;
             default:
                 break;
@@ -156,13 +165,13 @@ export class CSSElementManager implements ElementManager{
     destroy() {
         this.imageDownloadObservable.unsubscribe();
         this.touchSubscriber = null;
-        this.drugSubscriber = null;
+        this.dragSubscriber = null;
         this.changeImageSubscriber = null;
 
         if (this.changeImageSubscriber)
             this.changeImageSubscriber.unsubscribe();
-        if (this.drugSubscriber)
-            this.drugSubscriber.unsubscribe();
+        if (this.dragSubscriber)
+            this.dragSubscriber.unsubscribe();
         if (this.touchSubscriber)
             this.touchSubscriber.unsubscribe();
     }
@@ -322,9 +331,11 @@ export class CSSElementManager implements ElementManager{
             error: err => console.log(err),
             complete: () => {
                 this.imageUrlList = list;
-                this.changeImageSubscriber = getWheelObservable()
+                this.changeImageSubscriber = this.getWrapperView()
+                    .gesture
+                    .wheel
                     .subscribe(getWheelThresholdObserver(this.next.bind(this), this.prev.bind(this)));
-                this.zoomSubscriber = getTouchObservable().subscribe(this.scaleTouchZoomObserver);
+                this.zoomSubscriber = this.getWrapperView().gesture.touch.subscribe(this.scaleTouchZoomObserver);
                 this.displayImage(this.imageElements()[0]);
             }
         });

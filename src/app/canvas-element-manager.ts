@@ -2,16 +2,17 @@ import {style, attribute, clearInnerHTML} from "../libs";
 import {ElementOrigin} from "./interface/element-origin";
 import {ImageStatus, newImagePosition} from "./interface/canvas-image-position";
 import {Subscription, Observable, ReplaySubject, Observer} from "rxjs";
-import {getWheelObservable, getWheelThresholdObserver} from "./gesture-wheel";
+import {getWheelThresholdObserver, getDOMWheelObservable} from "./gesture-wheel";
 import {PartialObserver} from "rxjs/Observer";
 import {createImgs} from "./multiple-image-loader";
 import {ImageItem} from "./interface/image-item";
-import {getDragObservable} from "./gesture-mouse";
-import {getTouchObservable, getTouchThresholdObserver} from "./gesture-mobile";
+import {getTouchThresholdObserver, getDOMTouchObservable} from "./gesture-mobile";
 import {ElementManager} from "./interface/element-manager";
 import {CanvasWorkMode} from "./interface/canvas-work-mode";
 import {CONFIGURATION} from "./configuration";
 import {EventEmitter} from "./event-emitter";
+import {GestureElement} from "./interface/gesture-abservable";
+import {getDOMODragObservable} from "./gesture-mouse";
 /**
  * Created by yuriel on 2/22/17.
  *
@@ -82,7 +83,7 @@ export class CanvasElementManager implements ElementManager {
     private changeImageSubscriber: Subscription;
 
     /** Called when captured mouse events. */
-    private drugSubscriber: Subscription;
+    private dragSubscriber: Subscription;
 
     /** Called on mobile */
     private touchSubscriber: Subscription;
@@ -150,16 +151,21 @@ export class CanvasElementManager implements ElementManager {
         this.imgOrigin = origin(dom);
     }
 
-    getCanvasView(): HTMLCanvasElement {
-        let view = document.getElementById(this.canvasId);
+    getCanvasView(): HTMLCanvasElement & GestureElement {
+        let view = document.getElementById(this.canvasId) as HTMLCanvasElement & GestureElement;
         if (null == view) {
             let root = document.getElementById(this.rootId);
             let canvas = createCanvas(this.canvasId);
             root.appendChild(canvas);
-            view = document.getElementById(this.canvasId);
+            view = document.getElementById(this.canvasId) as HTMLCanvasElement & GestureElement;
+            view.gesture = {
+                drag: getDOMODragObservable(view),
+                wheel: getDOMWheelObservable(view),
+                touch: getDOMTouchObservable(view)
+            };
         }
         this.canvasOrigin = origin(view);
-        return view as HTMLCanvasElement;
+        return view;
     }
 
     private getContext() {
@@ -260,7 +266,9 @@ export class CanvasElementManager implements ElementManager {
             },
             complete: () => {
                 clearInnerHTML(this.rootId);
-                this.changeImageSubscriber = getWheelObservable()
+                this.changeImageSubscriber = this.getCanvasView()
+                    .gesture
+                    .wheel
                     .subscribe(getWheelThresholdObserver(this.next.bind(this), this.prev.bind(this)));
                 this.renderImage(this.imageElements[0]);
             }
@@ -317,13 +325,13 @@ export class CanvasElementManager implements ElementManager {
         this.destroyed = true;
         this.imageDownloadObservable.unsubscribe();
         this.touchSubscriber = null;
-        this.drugSubscriber = null;
+        this.dragSubscriber = null;
         this.changeImageSubscriber = null;
 
         if (this.changeImageSubscriber)
             this.changeImageSubscriber.unsubscribe();
-        if (this.drugSubscriber)
-            this.drugSubscriber.unsubscribe();
+        if (this.dragSubscriber)
+            this.dragSubscriber.unsubscribe();
         if (this.touchSubscriber)
             this.touchSubscriber.unsubscribe();
     }
@@ -337,8 +345,8 @@ export class CanvasElementManager implements ElementManager {
     }
 
     changeMode(mode: CanvasWorkMode) {
-        if (null != this.drugSubscriber) {
-            this.drugSubscriber.unsubscribe();
+        if (null != this.dragSubscriber) {
+            this.dragSubscriber.unsubscribe();
         }
 
         if(null != this.touchSubscriber) {
@@ -348,19 +356,40 @@ export class CanvasElementManager implements ElementManager {
 
         switch(mode) {
             case CanvasWorkMode.CHANGE:
-                this.touchSubscriber = getTouchObservable().subscribe(getTouchThresholdObserver(this.next.bind(this), this.prev.bind(this)));
+                this.touchSubscriber = this.getCanvasView()
+                    .gesture
+                    .touch
+                    .subscribe(getTouchThresholdObserver(this.next.bind(this), this.prev.bind(this)));
                 break;
             case CanvasWorkMode.SCALE:
-                this.drugSubscriber = getDragObservable().subscribe(this.scaleObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.scaleTouchObserver);
+                this.dragSubscriber = this.getCanvasView()
+                    .gesture
+                    .drag
+                    .subscribe(this.scaleObserver);
+                this.touchSubscriber = this.getCanvasView()
+                    .gesture
+                    .touch
+                    .subscribe(this.scaleTouchObserver);
                 break;
             case CanvasWorkMode.MOVE:
-                this.drugSubscriber = getDragObservable().subscribe(this.moveObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.moveTouchObserver);
+                this.dragSubscriber = this.getCanvasView()
+                    .gesture
+                    .drag
+                    .subscribe(this.moveObserver);
+                this.touchSubscriber = this.getCanvasView()
+                    .gesture
+                    .touch
+                    .subscribe(this.moveTouchObserver);
                 break;
             case CanvasWorkMode.BRIGHTNESS_CONTRAST:
-                this.drugSubscriber = getDragObservable().subscribe(this.brightnessContrastObserver);
-                this.touchSubscriber = getTouchObservable().subscribe(this.brightnessContrastTouchObserver);
+                this.dragSubscriber = this.getCanvasView()
+                    .gesture
+                    .drag
+                    .subscribe(this.brightnessContrastObserver);
+                this.touchSubscriber = this.getCanvasView()
+                    .gesture
+                    .touch
+                    .subscribe(this.brightnessContrastTouchObserver);
                 break;
             default:
                 break;
