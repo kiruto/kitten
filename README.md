@@ -215,6 +215,14 @@ kitten使用flapper搭建, 工程运行环境及开发环境参考[flapper](http
 
     获取当前浏览的图片URL. 
     
+- getCurrentImageElement()
+
+    获取当前浏览图片的Element.
+    
+- getCurrentIndex()
+
+    获取当前浏览图片的索引.
+    
 - destroy()
 
     回收.

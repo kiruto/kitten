@@ -95,9 +95,12 @@ export class CanvasElementManager implements ElementManager {
 
     private imageUrlList: string[];
 
+    private sourceHTML = "";
+
     constructor(private rootId: string) {
         this.canvasId = `ivc-${rootId}`;
         this.imgId = `ivi-${rootId}`;
+        this.sourceHTML = document.getElementById(rootId).innerHTML;
     }
 
     /** Only for test! */
@@ -334,6 +337,8 @@ export class CanvasElementManager implements ElementManager {
             this.dragSubscriber.unsubscribe();
         if (this.touchSubscriber)
             this.touchSubscriber.unsubscribe();
+
+        document.getElementById(this.rootId).innerHTML = this.sourceHTML;
     }
 
     getImageUrlList(): string[] {
@@ -342,6 +347,14 @@ export class CanvasElementManager implements ElementManager {
 
     getCurrentImageUrl(): string {
         return this.currentImageElement.src;
+    }
+
+    getCurrentImageElement(): HTMLImageElement {
+        return this.currentImageElement;
+    }
+
+    getCurrentIndex(): number {
+        return this.getImageUrlList().indexOf(this.getCurrentImageElement().getAttribute("src"));
     }
 
     changeMode(mode: CanvasWorkMode) {

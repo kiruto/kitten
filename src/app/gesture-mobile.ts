@@ -1,5 +1,4 @@
 import {Observable, Observer, ReplaySubject} from "rxjs";
-import {EventEmitter} from "./event-emitter";
 import {CONFIGURATION} from "./configuration";
 import {PartialObserver} from "rxjs/Observer";
 /**

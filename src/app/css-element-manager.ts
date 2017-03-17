@@ -1,5 +1,5 @@
 import {style, attribute} from "../libs";
-import {Observable, Subscription, ReplaySubject, Observer, Subject} from "rxjs";
+import {Observable, Subscription, ReplaySubject, Observer} from "rxjs";
 import {ImageItem} from "./interface/image-item";
 import {createImgs} from "./multiple-image-loader";
 import {getWheelThresholdObserver, getDOMWheelObservable} from "./gesture-wheel";
@@ -11,7 +11,7 @@ import {getTouchThresholdObserver, getDOMTouchObservable} from "./gesture-mobile
 import {getDOMODragObservable} from "./gesture-mouse";
 import {EventEmitter} from "./event-emitter";
 import {ElementManager} from "./interface/element-manager";
-import {GestureElement, GestureObservable} from "./interface/gesture-abservable";
+import {GestureElement} from "./interface/gesture-abservable";
 /**
  * Created by yuriel on 2/28/17.
  *
@@ -78,9 +78,12 @@ export class CSSElementManager implements ElementManager {
 
     private imageUrlList: string[];
 
+    private sourceHTML = "";
+
     constructor(private rootId: string) {
         this.wrapperId = `ivd-${rootId}`;
         this.imgId = `ivi-${rootId}`;
+        this.sourceHTML = document.getElementById(rootId).innerHTML;
     }
 
     /**
@@ -117,10 +120,12 @@ export class CSSElementManager implements ElementManager {
         if(!view) {
             let root = document.getElementById(this.rootId);
             view = createWrapper(this.wrapperId) as HTMLDivElement & GestureElement;
+            let touchSubject = new ReplaySubject(0);
+            getDOMTouchObservable(view).subscribe(touchSubject);
             view.gesture = {
                 drag: getDOMODragObservable(view),
                 wheel: getDOMWheelObservable(view),
-                touch: getDOMTouchObservable(view)
+                touch: touchSubject
             };
             root.appendChild(view);
         }
@@ -174,6 +179,8 @@ export class CSSElementManager implements ElementManager {
             this.dragSubscriber.unsubscribe();
         if (this.touchSubscriber)
             this.touchSubscriber.unsubscribe();
+
+        document.getElementById(this.rootId).innerHTML = this.sourceHTML;
     }
 
     getImageUrlList(): string[] {
@@ -182,6 +189,14 @@ export class CSSElementManager implements ElementManager {
 
     getCurrentImageUrl(): string {
         return this.currentImageElement.src;
+    }
+
+    getCurrentImageElement(): HTMLImageElement {
+        return this.currentImageElement;
+    }
+
+    getCurrentIndex(): number {
+        return this.getImageUrlList().indexOf(this.getCurrentImageElement().getAttribute("src"));
     }
 
     private scale(increment: number) {

@@ -17,4 +17,6 @@ export interface ElementManager {
     destroy(): void;
     getImageUrlList(): string[];
     getCurrentImageUrl(): string;
+    getCurrentImageElement(): HTMLImageElement;
+    getCurrentIndex(): number;
 }
