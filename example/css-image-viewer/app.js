@@ -86,7 +86,12 @@
             console.log(err);
         },
         complete: function () {
-            document.getElementById("kitten-loading").remove();
+            let d = document.getElementById("kitten-loading");
+            if (d.remove) {
+                d.remove();
+            } else if(d["removeNode"]) {
+                d["removeNode"]();
+            }
             active(kittenActions.zoom);
         }
     });

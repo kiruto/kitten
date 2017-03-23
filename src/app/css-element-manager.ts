@@ -306,7 +306,13 @@ export class CSSElementManager implements ElementManager {
 
         Array.prototype
             .forEach
-            .call(wrapper.getElementsByTagName("img"), (img: HTMLImageElement) => img.remove());
+            .call(wrapper.getElementsByTagName("img"), (img: HTMLImageElement) => {
+                if (img.remove) {
+                    img.remove();
+                } else if ((<any>img)["removeNode"]) {
+                    (<any>img)["removeNode"]();
+                }
+            });
 
         Observable.from(list)
             .reduce((acc: ImageItem[], one: string, index: number) => {
@@ -333,7 +339,7 @@ export class CSSElementManager implements ElementManager {
                     "class": `iv-image ${this.rootId}-ivi`
                 });
                 style(el, {
-                    transition: "transform 100ms ease",
+                    // transition: "transform 100ms ease",
                     position: "absolute",
                     "user-select": "none",
                     display: "none"
